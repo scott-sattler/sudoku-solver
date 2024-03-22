@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 import tempfile
 from sudokuclass import solver_engine
 from testing_tools import test_matrices, pretty_print, verified_solution
@@ -262,7 +262,7 @@ class CanvasGUI:
         if event.widget == self.options_menu_00:
             board = test_matrices(00)
         elif event.widget == self.options_menu_01:
-            board = test_matrices(01)
+            board = test_matrices(1)
         elif event.widget == self.options_menu_02:
             board = test_matrices(11)  # hard
 
@@ -340,12 +340,8 @@ class CanvasGUI:
 
 
     def debug_printer(self, event):
-        print "foo"
-        print event.x, event.y
-
-
-
-
+        print("foo")
+        print(event.x, event.y)
 
     def make_mini_boards2(self, matrix, large_square_x, large_square_y): # TODO change name [make] and move
         # todo fix large square x/y usage
@@ -409,9 +405,9 @@ class CanvasGUI:
     # todo grab the matrices from a list (click_select as well)
     def mini_matrix_board_selector(self, event):  # todo rename
         if event.x < 153 and event.y < 178:
-            board = test_matrices(01)
+            board = test_matrices(1)
         else:
-            print "foo"
+            print("foo")
             return
         self.current_board = board
         self.update_board()

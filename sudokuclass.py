@@ -27,14 +27,14 @@ class solver_engine():
         while SIZE > 0:
             value_range.insert(0, SIZE)
             SIZE -= 1
-        if verbose: print "possible values:", value_range
+        if verbose: print("possible values:", value_range)
         return value_range
 
 
     def find_empty_cell(self, current_board):  # TODO needs testing
         # sequential search for first empty element
         # condition check (if no single line or square values are found)
-        if verbose: print "#find element:"
+        if verbose: print("#find element:")
         #row = 0  # TODO PERFORMANCE (current_board.index(each_row), each_row.index(each_column_element))
         for each_row in current_board:
             #column = 0
@@ -114,22 +114,22 @@ class solver_engine():
     # TODO better name COLLECTOR?
     def horizontal_rule_exclusions(self, empty_element, current_board):
         # finds horizontal values
-        if verbose: print "#checking horizontal:", current_board[empty_element[0]]
+        if verbose: print("#checking horizontal:", current_board[empty_element[0]])
 
         h_rule_check = []
         ##############print current_board[empty_element[0]]
         for each_column_element in current_board[empty_element[0]]:
             if each_column_element != 0:
                 h_rule_check.append(each_column_element)  # create a list of these values
-                if verbose: print '\t', "#appending (from horizontal):", each_column_element
+                if verbose: print('\t', "#appending (from horizontal):", each_column_element)
 
-        if verbose: print '\t', "#found horizontal:", h_rule_check
+        if verbose: print('\t', "#found horizontal:", h_rule_check)
         return h_rule_check  # returns all values on the horizontal line
 
 
     def vertical_rule_exclusions(self, empty_element, current_board):  # todo can this be improved? by not using row_index
         # finds vertical values
-        if verbose: print "#checking vertical", '\n', '\t', "#checks vertical at:", empty_element
+        if verbose: print("#checking vertical", '\n', '\t', "#checks vertical at:", empty_element)
 
         v_rule_check = []
         row_index = 0
@@ -137,10 +137,10 @@ class solver_engine():
             column_element = current_board[row_index][empty_element[1]]
             if column_element != 0:  # and column_element not in v_rule_check: TODO simplifying the code here?
                 v_rule_check.append(column_element)  # create a list of these values
-                if verbose: print '\t', "#appending (from vertical):", column_element
+                if verbose: print('\t', "#appending (from vertical):", column_element)
             row_index += 1
 
-        if verbose: print "#found (non-unique) vertical:", v_rule_check
+        if verbose: print("#found (non-unique) vertical:", v_rule_check)
         return v_rule_check  # returns all values on the vertical line
 
 
@@ -149,13 +149,13 @@ class solver_engine():
         # TODO ??? if single value squares search can avoid this
 
         # find the 3x3 square the empty_element is in
-        if verbose: print "#checking nona-rant origin"
+        if verbose: print("#checking nona-rant origin")
         square_value = []
 
         for each_index in empty_element:
             square_value.append(int(math.ceil((each_index + .1)/3.0) - 1))
 
-        if verbose: print "#finding square from origin:", square_value  # hex-rant origin value
+        if verbose: print("#finding square from origin:", square_value)  # hex-rant origin value
 
         # iterate over 3x3 square
         s_rule_check = []
@@ -176,11 +176,10 @@ class solver_engine():
         for element in three_rule_permitted_values:  # reverse to order agenda smallest to largest new node values
             ref_bug = deepcopy(current_board)
             ref_bug[self.empty_element[0]][self.empty_element[1]] = element
-            if verbose: print "#current board", current_board, '\n', "#ref bug", ref_bug
+            if verbose: print("#current board", current_board, '\n', "#ref bug", ref_bug)
             agenda.insert(0, ref_bug)
-            if verbose: print "#agenda:", agenda
-        if verbose: print
-
+            if verbose: print("#agenda:", agenda)
+        if verbose: print()
         self.h_v_s_rule_check = []  # TODO FIX: should not be necessary
         self.three_rule_permitted_values = []
 
@@ -206,7 +205,7 @@ def tester(loops, use_finders):
     matrix_queue = \
     [
         #[test_matrices(00), "00"],
-        [test_matrices(01), "01"],
+        [test_matrices(1), "01"],
         #[test_matrices(02), "02"],
         #[test_matrices(03), "03"],
         #[test_matrices(10), "10"],
@@ -217,7 +216,7 @@ def tester(loops, use_finders):
     ]
 
     for each_matrix in matrix_queue:
-        print "Testing Matrix:", each_matrix[1]
+        print("Testing Matrix:", each_matrix[1])
         '''
         for each_test in solver_queue:
             print each_test[0], each_test[1], each_test[2], ":",
@@ -255,11 +254,12 @@ def tester(loops, use_finders):
                         #print "              SOLUTION!",
                         #print pretty_print(current_board)
                         total_time = (time_2 - time_1)
-                        print "Time %d:" % i, '{:00.6f}'.format(time_2 - time_1),
+                        print("Time %d:" % i, '{:00.6f}'.format(time_2 - time_1), end=' ')
                         break
                     three_rule_permitted_values = sudoku_solver.find_node_element_values(empty_element, current_board)
                     agenda = sudoku_solver.extend_nodes_and_insert(agenda, current_board, three_rule_permitted_values)
-            print '\t'*3, "Average time over %d tests: %f" % (loops, total_time), '\n'
+            print('\t' * 3, "Average time over %d tests: %f" % (loops, total_time), '\n')
+
 
 #tester(3, [1, 2])
 

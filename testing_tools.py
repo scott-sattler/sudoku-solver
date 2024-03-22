@@ -87,11 +87,11 @@ def test_matrices( selector ):
     # todo get rid of this by placing all of the above matrices in a list
     if selector == 00:
         selected = Test_Matrix_00
-    if selector == 01:
+    if selector == 1:
         selected = Test_Matrix_01
-    if selector == 02:
+    if selector == 2:
         selected = Test_Matrix_02
-    if selector == 03:
+    if selector == 3:
         selected = Test_Matrix_03
     if selector == 10:
         selected = Test_Matrix_10
@@ -119,17 +119,17 @@ def pretty_print( matrix ):
 
     for row in range(SIZE):
         if row % 3 == 0:
-            print '\n', "-------------------------------------",  # todo hardcoded
-        print
+            print('\n', "-------------------------------------")  # todo hardcoded
+        print()
         for column in range(SIZE):
             if column % 3 == 0:
-                print "|", "",
+                print("|", ""),
             if matrix[row][column] != 0:
-                print matrix[row][column], "",
+                print(matrix[row][column], "")
             else:
-                print " ", "",
-        print "|", "",
-    print '\n', "-------------------------------------",  # todo hardcoded
+                print (" ", "")
+        print("|", "")
+    print('\n', "-------------------------------------")  # todo hardcoded
     return ""
 
 
