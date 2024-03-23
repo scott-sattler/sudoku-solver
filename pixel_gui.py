@@ -240,7 +240,9 @@ class SolverEngine:
 
 
 class CanvasGUI:
-    def __init__(self, root, cell_size):
+    def __init__(self, root, cell_size=50, debug=False):
+        if debug: return  # noqa
+
         # todo: some sort of container, eg dictionary
         self.title_label = None
         self.solve_button = None
@@ -275,7 +277,7 @@ class CanvasGUI:
 
         width = len(self.board_gui_data[0])
         height = len(self.board_gui_data)
-        self.sudoku_solver = solver_engine(width, height)
+        # self.sudoku_solver = solver_engine(width, height)
 
         # OLD todo package this into a separate def?
         self.board_container = Canvas(
@@ -440,7 +442,7 @@ class CanvasGUI:
 
         self.options_button_abort = Label(self.options_button_label, text="ABORT?", fg='black')  # todo color
         style_config(self.options_button_abort)
-        self.options_button_abort.bind('<Button-1>', self.stop_solver)
+        self.options_button_abort.bind('<Button-1>', lambda event: self.stop_solver())
 
         # difficulty selector
         self.select_menu_container = Canvas(self.canvas_board, width=400, height=100)
@@ -579,17 +581,11 @@ class CanvasGUI:
         if len(board) != len(board[0]):  # todo move
             raise ValueError('Rectangular boards are unsupported.')
 
-        fixed_i = i
-        fixed_j = j
-        board_val = board[fixed_i][fixed_j]
+        board_val = board[i][j]
         for var_ij in range(len(board)):
-            if (fixed_i, var_ij) == (i, j):
-                continue
-            if (var_ij, fixed_j) == (i, j):
-                continue
-            if board[fixed_i][var_ij] == board_val:
+            if (i, var_ij) != (i, j) and board[i][var_ij] == board_val:
                 return False
-            if board[var_ij][fixed_j] == board_val:
+            if (var_ij, j) != (i, j) and board[var_ij][j] == board_val:
                 return False
         return True
 
@@ -598,12 +594,17 @@ class CanvasGUI:
         if len(board) != len(board[0]):  # todo move
             raise ValueError('Rectangular boards are unsupported.')
 
-        i_0 = i // 3
-        j_0 = j // 3
+        # (i, j) -> (0, 0) of 3x3 square
+        # then translated to grid coordinates
+        # i_0 = (i // 3) * 3
+        # j_0 = (j // 3) * 3
+        # get top left corner of 3x3 square
+        i_0 = i - (i % 3)
+        j_0 = j - (j % 3)
         board_val = board[i][j]
         for k in range(3):
             for l in range(3):
-                if (i, j) == (k, l):
+                if (i, j) == (k + i_0, l + j_0):
                     continue
                 sqr_board_val = board[k + i_0][l + j_0]
                 if sqr_board_val == board_val:
@@ -625,19 +626,23 @@ class CanvasGUI:
 
     # todo: refactor out; how to solve with updates? yield? request current?
     def solve_board(self):
-        ss = self.sudoku_solver
+        # rule check test:
+
+
+
+        from copy import deepcopy
+
         board_data = self.convert_board()
 
         # seed agenda
         agenda = [board_data]
         while agenda:
-            current_board = agenda.pop(0)
-            next_empty = self._find_empty(current_board)
-            print(next_empty)
+            curr_board = agenda.pop()
+            next_empty = self._find_empty(curr_board)
 
             if self.abort or not next_empty:
-                # self.update_board()
-                self.agenda = list()
+                self.update_board(curr_board)
+                # agenda = list()
                 self.options_button_abort.pack_forget()
                 self.abort = False
                 break
@@ -646,24 +651,30 @@ class CanvasGUI:
             # three rule permitted values
             # valid_values = ss.find_node_element_values(next_empty, self.current_board)
             # self.agenda = ss.extend_nodes_and_insert(self.agenda, self.current_board, valid_values)
+            i, j = next_empty
+            for val in range(9, 0, -1):
+                curr_board[i][j] = val
+                rule_h_v = self._hv_rule_check(curr_board, i, j)
+                rule_s = self._s_rule_check(curr_board, i, j)
+                if rule_h_v and rule_s:
+                    agenda.append(deepcopy(curr_board))
 
 
+        next_update = agenda[-1] if agenda else curr_board
+        # todo: convert to text?
+        self.update_board(next_update)
+        self.master.update()  # GUI update
+        # time.sleep(.2)  # todo add GUI toggle option
 
-            next_update = self.agenda[-1]
-            # todo: convert to text?
-            self.update_board(next_update)
-            self.master.update()  # GUI update
-            # time.sleep(.2)  # todo add GUI toggle option
-
-        # todo: what does this do? UI stuff?
-        if self.agenda != []:
-            self.master.after(1, self.solve_board)
+        # # todo: what does this do? UI stuff?
+        # if agenda:
+        #     self.master.after(1, self.solve_board)
 
 
     # def solve_execute(self):
     #     self.solver_engine()
 
-    def stop_solver(self, second):  # TODO fix second hack
+    def stop_solver(self):
         self.abort = True
 
     # todo move?
@@ -786,14 +797,16 @@ class CanvasGUI:
 
 '''
 
-BOARD_SIZE = 9
-CELL_SIZE = 50  # cell size: minimum > 25... probably
 
-benchmarking = False
+if __name__ == '__main__':
+    BOARD_SIZE = 9
+    CELL_SIZE = 50  # cell size: minimum > 25... probably
 
-root = Tk()
-sudoku_gui = CanvasGUI(root, CELL_SIZE)
-root.mainloop()
+    benchmarking = False
+
+    root = Tk()
+    sudoku_gui = CanvasGUI(root, CELL_SIZE)
+    root.mainloop()
 
 
 '''
