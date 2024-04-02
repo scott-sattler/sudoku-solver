@@ -1,18 +1,15 @@
 from tkinter import *
 import tempfile
-from sudokuclass import solver_engine
-from testing_tools import test_matrices, pretty_print, verified_solution
+from OLD_testing_tools import test_matrices
 
 # from time import *
-import time
 
-# stack overflow
 ICON = (
-           b'\x00\x00\x01\x00\x01\x00\x10\x10\x00\x00\x01\x00\x08\x00h\x05\x00\x00'
-           b'\x16\x00\x00\x00(\x00\x00\x00\x10\x00\x00\x00 \x00\x00\x00\x01\x00'
-           b'\x08\x00\x00\x00\x00\x00@\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-           b'\x00\x01\x00\x00\x00\x01'
-       ) + b'\x00' * 1282 + b'\xff' * 64
+    b'\x00\x00\x01\x00\x01\x00\x10\x10\x00\x00\x01\x00\x08\x00h\x05\x00\x00'
+    b'\x16\x00\x00\x00(\x00\x00\x00\x10\x00\x00\x00 \x00\x00\x00\x01\x00'
+    b'\x08\x00\x00\x00\x00\x00@\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    b'\x00\x01\x00\x00\x00\x01'
+) + b'\x00' * 1282 + b'\xff' * 64
 
 _, ICON_PATH = tempfile.mkstemp()
 with open(ICON_PATH, 'wb') as icon_file:
@@ -24,219 +21,22 @@ with open(ICON_PATH, 'wb') as icon_file:
 ###############################################################################
 
 # move to separate file
-def pretty_print(matrix):
-    SIZE = len(matrix[0])
-
-    for row in range(SIZE):
-        if row % 3 == 0:
-            print('\n', "-------------------------------------", end=' ')  # todo hardcoded
-        print()
-        for column in range(SIZE):
-            if column % 3 == 0:
-                print("|", "", end=' ')
-            if matrix[row][column] != 0:
-                print(matrix[row][column], "", end=' ')
-            else:
-                print(" ", "", end=' ')
-        print("|", "", end=' ')
-    print('\n', "-------------------------------------", end=' ')  # todo hardcoded
-    return ""
-
-
-# move to separate file
 def verified_solution():
     return
-
-
-# move to separate file
-class TestMatrices:
-    @staticmethod
-    def matrix_00():
-        test_matrix = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0]]
-        return test_matrix
-
-    @staticmethod
-    def matrix_01():
-        test_matrix = [[5, 0, 2, 0, 9, 0, 7, 8, 6],
-                       [9, 0, 3, 0, 6, 0, 5, 0, 0],
-                       [6, 7, 1, 8, 0, 0, 3, 2, 9],
-                       [0, 0, 0, 7, 5, 1, 9, 0, 0],
-                       [8, 9, 0, 4, 0, 2, 0, 6, 7],
-                       [0, 0, 4, 6, 8, 9, 0, 0, 0],
-                       [4, 2, 7, 0, 0, 8, 6, 9, 3],
-                       [0, 0, 9, 0, 7, 0, 8, 0, 2],
-                       [3, 5, 8, 0, 2, 0, 4, 0, 1]]
-        return test_matrix
-
-    @staticmethod
-    def matrix_02():
-        test_matrix = [[5, 0, 2, 0, 9, 0, 7, 8, 6],
-                       [9, 0, 3, 0, 6, 0, 5, 0, 0],
-                       [6, 7, 1, 8, 0, 0, 3, 2, 9],
-                       [0, 0, 0, 7, 5, 1, 9, 0, 0],
-                       [8, 9, 0, 4, 0, 2, 0, 6, 7],
-                       [0, 0, 4, 6, 8, 9, 0, 0, 0],
-                       [4, 2, 7, 0, 0, 8, 6, 9, 3],
-                       [0, 0, 9, 0, 7, 0, 8, 0, 2],
-                       [3, 5, 8, 0, 2, 0, 4, 0, 1]]
-        return test_matrix
-
-    @staticmethod
-    def matrix_03():
-        test_matrix = [[0, 8, 0, 0, 0, 1, 0, 0, 5],
-                       [0, 0, 7, 0, 0, 0, 0, 9, 0],
-                       [6, 0, 0, 0, 0, 0, 3, 0, 0],
-                       [0, 1, 0, 0, 0, 2, 0, 0, 8],
-                       [0, 0, 0, 0, 7, 0, 0, 0, 0],
-                       [0, 0, 3, 5, 0, 0, 6, 0, 0],
-                       [0, 9, 0, 0, 6, 0, 0, 0, 1],
-                       [5, 0, 0, 0, 0, 3, 0, 2, 0],
-                       [0, 0, 4, 8, 0, 0, 7, 0, 0]]
-        return test_matrix
-
-    # Easy 11 [4][0-2] # + 1 - 3
-    @staticmethod
-    def matrix_10():
-        test_matrix = [[0, 0, 0, 7, 0, 0, 0, 0, 0],
-                       [1, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 4, 3, 0, 2, 0, 0],
-                       [4, 2, 3, 0, 0, 0, 0, 0, 6],
-                       [0, 0, 0, 5, 0, 9, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 4, 1, 8],
-                       [0, 0, 0, 0, 8, 1, 0, 0, 0],
-                       [0, 0, 2, 0, 0, 0, 0, 5, 0],
-                       [0, 4, 0, 0, 0, 0, 3, 0, 0]]
-        return test_matrix
-
-    # 17 element with solution
-    @staticmethod
-    def matrix_11():
-        test_matrix = [[0, 0, 0, 7, 0, 0, 0, 0, 0],
-                       [1, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 4, 3, 0, 2, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 0, 6],
-                       [0, 0, 0, 5, 0, 9, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 4, 1, 8],
-                       [0, 0, 0, 0, 8, 1, 0, 0, 0],
-                       [0, 0, 2, 0, 0, 0, 0, 5, 0],
-                       [0, 4, 0, 0, 0, 0, 3, 0, 0]]
-        return test_matrix
-
-    # 17 element without solution HARD TO SOLVE
-    @staticmethod
-    def matrix_12():
-        test_matrix = [[0, 0, 0, 8, 0, 1, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 4, 3, 0],
-                       [5, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 7, 0, 8, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 1, 0, 0],
-                       [0, 2, 0, 0, 3, 0, 0, 0, 0],
-                       [6, 0, 0, 0, 0, 0, 0, 7, 5],
-                       [0, 0, 3, 4, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 2, 0, 0, 6, 0, 0]]
-        return test_matrix
-
-    # Easy 12 [5][2] [NO SOLUTION]
-    @staticmethod
-    def matrix_13():
-        test_matrix = [[0, 0, 0, 8, 0, 1, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 4, 3, 0],
-                       [5, 0, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 7, 0, 8, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 1, 0, 0],
-                       [0, 2, 0, 0, 3, 0, 0, 0, 0],
-                       [6, 0, 0, 0, 0, 0, 0, 7, 5],
-                       [0, 0, 3, 4, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 2, 0, 0, 6, 0, 0]]
-        return test_matrix
-
-    @staticmethod
-    def matrix_14():
-        test_matrix = [[0, 2, 0, 0, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 6, 0, 0, 0, 0, 3],
-                       [0, 7, 4, 0, 8, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 3, 0, 0, 2],
-                       [0, 8, 0, 0, 4, 0, 0, 1, 0],
-                       [6, 0, 0, 5, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 1, 0, 7, 8, 0],
-                       [5, 0, 0, 0, 0, 9, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 4, 0]]
-        return test_matrix
-
-    @staticmethod
-    def matrix_15():
-        test_matrix = [[1, 2, 3, 4, 5, 6, 7, 8, 0],
-                       [0, 0, 0, 6, 0, 0, 0, 0, 3],
-                       [0, 7, 4, 0, 8, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 3, 0, 0, 2],
-                       [0, 8, 0, 0, 4, 0, 0, 1, 0],
-                       [6, 0, 0, 5, 0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 1, 0, 7, 8, 0],
-                       [5, 0, 0, 0, 0, 9, 0, 0, 0],
-                       [0, 0, 0, 0, 0, 0, 0, 4, 0]]
-        return test_matrix
-
-    @staticmethod
-    def matrix_16():
-        test_matrix = [[0, 0, 0, 0, 0, 0, 0, 3, 1],
-                       [6, 0, 0, 0, 2, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 7, 0, 0, 0, 0],
-                       [0, 5, 0, 1, 0, 8, 0, 0, 0],
-                       [2, 0, 0, 0, 0, 0, 6, 0, 0],
-                       [0, 0, 0, 3, 0, 0, 0, 7, 0],
-                       [0, 0, 0, 0, 4, 0, 2, 0, 0],
-                       [0, 3, 0, 5, 0, 0, 0, 0, 0],
-                       [7, 0, 0, 0, 0, 0, 0, 0, 0]]
-        return test_matrix
-
-    @staticmethod
-    def matrix_16_s():
-        test_matrix = [[9, 2, 4, 6, 8, 5, 7, 3, 1],
-                       [6, 7, 1, 4, 2, 3, 8, 5, 9],
-                       [3, 8, 5, 9, 7, 1, 4, 2, 6],
-                       [4, 5, 7, 1, 6, 8, 3, 9, 2],
-                       [2, 9, 3, 7, 5, 4, 6, 1, 8],
-                       [1, 6, 8, 3, 9, 2, 5, 7, 4],
-                       [5, 1, 9, 8, 4, 7, 2, 6, 3],
-                       [8, 3, 2, 5, 1, 6, 9, 4, 7],
-                       [7, 4, 6, 2, 3, 9, 1, 8, 5]]
-        return test_matrix
-
 
 ###############################################################################
 # END testing tools file
 ###############################################################################
 
-class ListNode:
-    def __init__(self, val, prv, nxt):
-        self.val = val
-        self.prv = prv
-        self.nxt = nxt
-
 
 class CellData:
     def __init__(self, number=None, text=None, canvas=None):
-        self.number = number
-        self.text = text
-        self.canvas = canvas
+        self.number = number  # actual value to display (as text)
+        self.text = text  # text id todo: change to text_id?
+        self.canvas = canvas  # canvas id?
 
     def __repr__(self):
         return str(self.number), str(self.text), str(self.canvas)
-
-
-
-
-class SolverEngine:
-    def __init__(self, board):
-        pass
 
 
 class CanvasGUI:
@@ -271,13 +71,12 @@ class CanvasGUI:
         self.font_size = int(12 / 25.000 * cell_size)
         self.abort = FALSE  # todo better way of doing this?
 
+        # primary data structure
         self.board_gui_data = [[CellData() for _ in range(9)] for __ in range(9)]
 
-        # self.text_id_small_matrix_00 = [[0 for _ in range(9)] for __ in range(9)]
-
+        # todo: remove
         width = len(self.board_gui_data[0])
         height = len(self.board_gui_data)
-        # self.sudoku_solver = solver_engine(width, height)
 
         # OLD todo package this into a separate def?
         self.board_container = Canvas(
@@ -303,6 +102,7 @@ class CanvasGUI:
         self.canvas_board.config(borderwidth=0, highlightthickness=0)
         self.control_panel.pack(side=BOTTOM, fill=BOTH)
 
+        # todo: move to main
         self.create_title()
         self.initialize_board()
         self.controls()
@@ -320,7 +120,7 @@ class CanvasGUI:
     def initialize_board(self):
         """
         - create board lines
-        - initialize board_gui_data matrix
+        - initialize (populate) board_gui_data matrix
             create canvas and text box for each cell
         """
         font_size = self.font_size
@@ -473,8 +273,6 @@ class CanvasGUI:
         self.solve_button_label_disabled.pack()
         self.options_button_abort.pack()
         self.solve_board()
-        # OLD todo: review: if i include abort.pack_forget here, it executes before solver_execute finishes
-
 
     def display_difficulty_menu(self):
         """ spawns difficulty menu after clicking 'select' """
@@ -487,14 +285,13 @@ class CanvasGUI:
 
         self.solve_button_label_disabled.pack()  # re-enable solver button
 
-        # todo the test_matrices should be in a list, and that list can be used in mini_matrix_board_selector
+        # todo: review/move
         '''
         self.make_mini_boards(test_matrices(01), 0, 0)
         self.make_mini_boards(test_matrices(02), 1, 0)
         self.make_mini_boards(test_matrices(03), 2, 0)
         #self.make_mini_boards(test_matrices(11), 0, 1)
         '''
-
 
     def create_options_menu(self):
         # place options menu stuff here
@@ -521,6 +318,9 @@ class CanvasGUI:
 
 
     def board_selector(self, event):
+        # todo: fix TestMatrices() usage
+        from testing.test_cases import TestMatrices
+
         board = TestMatrices().matrix_00()
 
         if event.widget == self.options_menu_01:
@@ -528,151 +328,84 @@ class CanvasGUI:
         elif event.widget == self.options_menu_02:
             board = TestMatrices().matrix_11()  # hard
 
-        self.update_board(board)
+        self.update_entire_board(board)
         self.cell_shader(board)
         self.solve_button_label_disabled.pack_forget()
         self.forget_options_menu()
 
-    # todo: consider updating only changed cells?
-    def update_board_limited(self):  # todo rename
-        pass
-
-    # todo: make this a new_board_update...
-    def update_board(self, new_board):
-        # update entire board
+    def update_entire_board(self, new_board) -> None:
         for i in range(len(new_board)):
             for j in range(len(new_board[0])):  # assumes rectangular
                 self.board_gui_data[i][j].number = new_board[i][j]
 
                 text_id = self.board_gui_data[i][j].text
                 number = self.board_gui_data[i][j].number
-                if not number:
+                if number == 0:
                     number = ''
 
                 self.canvas_board.itemconfig(text_id, text=number)
 
+    def limited_update(self, changed_cells) -> None:
+        if not changed_cells:
+            return
+
+        for i, j, val in changed_cells:
+            self.board_gui_data[i][j].number = val
+
+            text_id = self.board_gui_data[i][j].text
+            if val == 0:  # prevents display of zeros
+                val = ''
+
+            self.canvas_board.itemconfig(text_id, text=val)
+
+    # todo: keep here or move to solver file?
     def convert_board(self):
         """ convert to array of int arrays """
         return [[cell.number for cell in row] for row in self.board_gui_data]
 
-    # todo: move
-    @staticmethod
-    def _find_empty(board):
-        # i = j = 0
-        # while True:
-        #     if board[i][j] != 0:
-        #         return i, j
-        #
-        #     j += 1
-        #     if j == len(board):
-        #         j = 0
-        #         i += 1
-        #     if i == len(board):
-        #         break
-
-        for i in range(len(board)):
-            for j in range(len(board[0])):
-                if board[i][j] == 0:
-                    return i, j
-
-    @staticmethod
-    # todo: refactor after change: ij -> i, j
-    def _hv_rule_check(board, i, j):
-        if len(board) != len(board[0]):  # todo move
-            raise ValueError('Rectangular boards are unsupported.')
-
-        board_val = board[i][j]
-        for var_ij in range(len(board)):
-            if (i, var_ij) != (i, j) and board[i][var_ij] == board_val:
-                return False
-            if (var_ij, j) != (i, j) and board[var_ij][j] == board_val:
-                return False
-        return True
-
-    @staticmethod
-    def _s_rule_check(board, i, j):
-        if len(board) != len(board[0]):  # todo move
-            raise ValueError('Rectangular boards are unsupported.')
-
-        # (i, j) -> (0, 0) of 3x3 square
-        # then translated to grid coordinates
-        # i_0 = (i // 3) * 3
-        # j_0 = (j // 3) * 3
-        # get top left corner of 3x3 square
-        i_0 = i - (i % 3)
-        j_0 = j - (j % 3)
-        board_val = board[i][j]
-        for k in range(3):
-            for l in range(3):
-                if (i, j) == (k + i_0, l + j_0):
-                    continue
-                sqr_board_val = board[k + i_0][l + j_0]
-                if sqr_board_val == board_val:
-                    return False
-        return True
-
-    '''
-    naive search:
-        check each j vertical
-        check each i horizontal
-        check each ij local square
-    slight optimization:
-        start with all possible values
-        remove values found in naive search
-    fully optimized:
-        Exact Cover; Dancing Links (DLX); Algorithm X
-
-    '''
-
-    # todo: refactor out; how to solve with updates? yield? request current?
+    # todo: refactor out, to main
     def solve_board(self):
-        # rule check test:
-
-
-
         from copy import deepcopy
-
         board_data = self.convert_board()
+
+        from solver_engine import SolverEngine
+        se = SolverEngine()
 
         # seed agenda
         agenda = [board_data]
+        last_board = deepcopy(board_data)
         while agenda:
             curr_board = agenda.pop()
-            next_empty = self._find_empty(curr_board)
+            next_empty = se.find_empty(curr_board)
 
             if self.abort or not next_empty:
-                self.update_board(curr_board)
-                # agenda = list()
+                self.update_entire_board(curr_board)
                 self.options_button_abort.pack_forget()
                 self.abort = False
                 break
 
-            # todo: investigate further
-            # three rule permitted values
-            # valid_values = ss.find_node_element_values(next_empty, self.current_board)
-            # self.agenda = ss.extend_nodes_and_insert(self.agenda, self.current_board, valid_values)
             i, j = next_empty
             for val in range(9, 0, -1):
                 curr_board[i][j] = val
-                rule_h_v = self._hv_rule_check(curr_board, i, j)
-                rule_s = self._s_rule_check(curr_board, i, j)
+                rule_h_v = se.hv_rule_check(curr_board, i, j)
+                rule_s = se.s_rule_check(curr_board, i, j)
                 if rule_h_v and rule_s:
                     agenda.append(deepcopy(curr_board))
 
-
-        next_update = agenda[-1] if agenda else curr_board
-        # todo: convert to text?
-        self.update_board(next_update)
-        self.master.update()  # GUI update
-        # time.sleep(.2)  # todo add GUI toggle option
-
-        # # todo: what does this do? UI stuff?
-        # if agenda:
-        #     self.master.after(1, self.solve_board)
+                    next_limited_update = list()
+                    for i_u in range(9):
+                        for j_u in range(9):
+                            val = curr_board[i_u][j_u]
+                            if val != last_board[i_u][j_u]:
+                                next_limited_update.append((i_u, j_u, val))
+                    self.limited_update(next_limited_update)
+                    self.master.update()  # GUI update
+                    last_board = deepcopy(curr_board)
 
 
     # def solve_execute(self):
     #     self.solver_engine()
+
 
     def stop_solver(self):
         self.abort = True
@@ -770,7 +503,7 @@ class CanvasGUI:
             print("foo")
             return
         self.current_board = board
-        self.update_board()
+        self.update_entire_board()
         self.solve_button_label_disabled.pack_forget()
 
         self.forget_options_menu()

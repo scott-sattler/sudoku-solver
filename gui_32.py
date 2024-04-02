@@ -1,7 +1,7 @@
 from tkinter import *
 import tempfile
 from sudokuclass import solver_engine
-from testing_tools import test_matrices, pretty_print, verified_solution
+from OLD_testing_tools import test_matrices, pretty_print, verified_solution
 from time import *
 
 # stack overflow
