@@ -1,6 +1,6 @@
 import math
 from copy import deepcopy
-from OLD_testing_tools import test_matrices, pretty_print, verified_solution
+from old.OLD_testing_tools import test_matrices
 import time
 
 verbose = False
