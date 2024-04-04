@@ -31,17 +31,21 @@ def verified_solution():
 
 
 class CellData:
-    def __init__(self, value=None, text_id=None, canvas_id=None):
+    def __init__(self, value=None, text_id=None, canvas_id=None, locked=False):
         self.value = value  # actual value to display (as text)
-        self.text_id = text_id  # text id todo: change to text_id?
-        self.canvas_id = canvas_id  # canvas id?
+        self.text_id = text_id
+        self.canvas_id = canvas_id
+        self.locked = locked  # locked when loading a board
 
     def __repr__(self):
         return str((self.value, self.text_id, self.canvas_id))
 
 
 class CanvasGUI(tk.Tk):
+    # todo: lock loaded board cells
+
     def __init__(self, *args, **kwargs):
+
 
         debug = False
 
@@ -50,18 +54,22 @@ class CanvasGUI(tk.Tk):
         self.container.config(background="white")
         self.container.pack(side="top", fill="both", expand=True)
 
-        self.container.grid_rowconfigure(0, weight=1)
-        self.container.grid_columnconfigure(0, weight=1)
+        # self.container.grid_rowconfigure(0, weight=1)
+        # self.container.grid_columnconfigure(0, weight=1)
 
         if debug: return  # noqa
 
         # todo: some sort of container, eg dictionary
+        self.button_lookup = dict()
+
         self.title_label = None
+
+        self.control_panel_container = None
         self.solve_button = None
         self.solve_button_label = None
         self.solve_button_label_disabled = None
-        self.options_button = None
-        self.options_button_label = None
+        self.select_button = None
+        self.select_button_label = None
         self.options_button_abort = None
 
         self.select_menu_container = None
@@ -71,11 +79,6 @@ class CanvasGUI(tk.Tk):
 
         self.num_selector = None
 
-        # self.master = root  # todo: rename
-        # root.title("")
-        # root.iconbitmap(default=ICON_PATH)
-        # root.resizable(width=False, height=False)
-        # root.config(background="white")
 
         self.title("")
         self.iconbitmap(default=ICON_PATH)
@@ -95,28 +98,24 @@ class CanvasGUI(tk.Tk):
         # primary data structure
         self.board_gui_data = [[CellData() for _ in range(9)] for __ in range(9)]
 
+        self.board_index_lookup = dict()
+        self.num_selector_lookup = dict()  # todo: move? reorg
+
+        self.selected_cell = None
+
         self.board_width = 465
         # self.board_height =
-        self.canvas_board_width = 225.000 / 9 / 25 * self.dynamic_size + self.offset / 5 + 2
-        self.canvas_board_height = 225.000 / 9 / 25 * self.dynamic_size + self.offset / 5 + 2
-        print('w', self.canvas_board_width, 'h', self.canvas_board_height)
-
-        # todo: remove
-        width = len(self.board_gui_data[0])
-        height = len(self.board_gui_data)
-
-        # self.container = Canvas(root)
-        # # self.container.config(height=1800, width=1800)
-        # self.container.config(borderwidth=5, highlightbackground='red')
-        # self.container.pack()
+        self.canvas_board_width = 225.000 / 9 / 25 * self.dynamic_size + self.offset / 5 + 2  # todo: review for accuracy
+        self.canvas_board_height = 225.000 / 9 / 25 * self.dynamic_size + self.offset / 5 + 2  # todo: review for accuracy
+        # print('w', self.canvas_board_width, 'h', self.canvas_board_height)
 
         self.title_container = tk.Canvas(self.container)
-        self.title_container.config(borderwidth=0, highlightthickness=0)
-        # height=50.000/9/25*self.dynamic_size, width=225.000/9/25*self.dynamic_size
-        self.title_container.pack()  # side=TOP, fill=BOTH
+        # self.title_container.pack()
 
-        # OLD todo: hardcoded some style stuff (offset/5+2)
         self.canvas_board = tk.Canvas(self.container)
+        # self.canvas_board.bind("<Button-1>", self.event_handler)
+        # self.canvas_board.bind("<Button-1>", self.process_user_input)
+        # self.canvas_board.pack()
 
         self.canvas_board.config(
             height=self.canvas_board_height,
@@ -125,7 +124,7 @@ class CanvasGUI(tk.Tk):
 
         self.canvas_board_width = self.canvas_board.winfo_reqwidth()  # todo: why tho?
         self.canvas_board_height = self.canvas_board.winfo_reqheight()  # todo: why tho?
-        print('cb.winfo_req_', self.canvas_board.winfo_reqwidth(), self.canvas_board.winfo_reqheight())
+        # print('cb.winfo_req_', self.canvas_board.winfo_reqwidth(), self.canvas_board.winfo_reqheight())
 
         self.canvas_board.config(borderwidth=0, highlightthickness=0)
         self.canvas_board.config(bg='white')
@@ -135,12 +134,6 @@ class CanvasGUI(tk.Tk):
         self.canvas_board.pack()
         # self.canvas_board.bind('<Button-1>', self.mini_matrix_board_selector)
 
-        self.control_panel = tk.Canvas(self.container)
-        # self.control_panel.config(height=50.000/9/25*self.dynamic_size, width=225.000/9/25*self.dynamic_size)
-        self.control_panel.config(bg='white')
-        self.canvas_board.config(borderwidth=0, highlightthickness=0)
-        self.control_panel.pack(side=tk.BOTTOM, fill=tk.BOTH)
-
 
         self.fill_count = 0  # todo: for testing/debugging
         # ["#FFFFFF", "#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#00FFFF", "#FF00FF", "#C0C0C0", "#808080", "#800000", "#808000", "#008000", "#800080", "#008080", "#000080"]  # noqa
@@ -148,20 +141,29 @@ class CanvasGUI(tk.Tk):
         self.fill =   ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', 'grey', '#00FFFF', '#FF00FF', '#FF9900', '#8000FF', 'grey']  # noqa
 
         # todo: move to main
+        # order dependent
         self.create_title()
         self.initialize_board()
         self.controls()
 
-        self.update()
         self.initialize_num_selector_popup()
         self.bindings()
+
+        cbw = self.canvas_board_width
+        cbh = self.canvas_board_height
+        print(cbw, cbh)
+        print(self.canvas_board.winfo_reqwidth())
 
 
 
     def bindings(self):
         # self.bind("<Button-1>", self.print_widget_under_mouse)
         # self.bind("<Button-3>", self.spawn_selector)
-        self.bind("<Button-1>", self.user_input)
+
+        # self.bind("<Button-1>", self.process_user_input)
+        self.bind("<Button-1>", self.event_handler)
+
+
 
     def print_widget_under_mouse(self, e):
         offset = 5  # canvas border offset
@@ -181,7 +183,6 @@ class CanvasGUI(tk.Tk):
 
         print("widget:", widget, widget.winfo_id())
         print(type(widget))
-
 
         self.fill_count = (self.fill_count + 1) % len(self.fill)
 
@@ -221,7 +222,6 @@ class CanvasGUI(tk.Tk):
         self.num_selector["state"] = tk.DISABLED
         self.num_selector.place_forget()
 
-        self.num_selector_lookup = dict()  # todo: move
         for i in range(3):
             for j in range(3):
                 canvas_id = self.num_selector.create_rectangle(
@@ -235,7 +235,7 @@ class CanvasGUI(tk.Tk):
 
                 self.fill_count = (self.fill_count + 1) % len(self.fill)
                 num = (i * 3) + (j + 1)
-                self.num_selector_lookup[num] = canvas_id  # todo: needed?
+                self.num_selector_lookup[canvas_id] = num
 
                 text_id = self.num_selector.create_text(
                     j * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
@@ -244,38 +244,172 @@ class CanvasGUI(tk.Tk):
                     text=num,
                     tags='num',
                 )
+                self.num_selector_lookup[text_id] = num
+
+    def event_handler(self, e):
+        print(e, e.widget)
+        print()
+
+        empty_board = self.options_menu_00
+        easy_board = self.options_menu_01
+        hard_board = self.options_menu_02
+        boards = [empty_board, easy_board, hard_board]
+
+        def board_input(e):
+            offset = self.offset / 8  # canvas lines/cells offset
+
+            board = e.widget
+
+            x = e.x_root - board.winfo_rootx()
+            y = e.y_root - board.winfo_rooty()
+
+            cbw = self.canvas_board_width  # todo: change this to something like, self.canvas_board.winfo_reqwidth()
+            cbh = self.canvas_board_height  # todo: change this to something like, self.canvas_board.winfo_reqwidth()
+
+            cb = self.canvas_board
+
+            if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
+                obj_ids = board.find_closest(x, y)
+                current = board.gettags("current")
+                print('items', obj_ids, 'current', current)
+                for id_ in obj_ids:
+                    if not id_: continue
+                    if current and board.gettags(id_)[0] == 'cell':
+                        print('(i, j):', self.board_index_lookup.get(id_))
+                        self.selected_cell = self.board_index_lookup.get(id_)
+                        self.toggle_selector(e)
+                    if current and board.gettags(id_)[0] == 'num':
+                        val = self.num_selector_lookup.get(id_)
+                        i, j = self.selected_cell
+                        print('i j val:', (i, j, val))
+                        self.limited_update([(i, j, val), ])
+                        self.selected_cell = None
+                        self.toggle_selector(e)
 
 
-    def user_input(self, e):
+                    board.itemconfigure(id_, fill=self.fill[self.fill_count])
+                    self.fill_count = (self.fill_count + 1) % len(self.fill)
+
+
+        def board_selector(event):
+            # todo: fix TestMatrices() usage
+            from testing.test_cases import TestMatrices
+
+            board = TestMatrices().matrix_00()
+            print(event, event.widget)
+            if event.widget == self.options_menu_01:
+                board = TestMatrices().matrix_01()
+            elif event.widget == self.options_menu_02:
+                board = TestMatrices().matrix_11()  # hard
+
+            self.update_entire_board(board)
+            self.cell_shader(board)  # todo: incorporate lock here ?
+            self.solve_button.config(text='SOLVE')
+            self.solve_button['state'] = tk.NORMAL
+            self.select_menu_container.place_forget()
+
+        def click_solve():
+            if self.solve_button['state'] == tk.DISABLED:
+                return
+            if self.solve_button.cget('text') == 'SOLVE':
+                self.solve_button.config(text='ABORT?')
+                self.select_menu_container.place_forget()
+                self.solve_board()
+            else:
+                self.solve_button.config(text='SOLVE')
+                self.solve_button['state'] = tk.DISABLED
+                self.abort = True
+
+
+
+
+        if e.widget in [self.canvas_board, self.num_selector]:
+            """ handles board user entry """
+            print('usr board inp')
+            # self.process_user_input(e)
+            board_input(e)
+        elif e.widget == self.select_button:
+            """ spawns difficulty menu after clicking 'select' """
+            if self.select_menu_container.winfo_viewable():
+                self.select_menu_container.place_forget()
+            else:
+                """ place() doesn't work without arguments """
+                """ even if place(*args) is called at creation """
+                self.select_menu_container.place(relx=.5, rely=.5, anchor=tk.CENTER)
+        elif e.widget in boards:
+            board_selector(e)
+        elif e.widget == self.solve_button:
+            click_solve()
+
+
+
+    def process_user_input(self, e):
         # todo: requre currently open window focus
+        # todo: val check
 
+        # abstract:
+        # replace cb/ns
+        # 'num'/'cll'
+        # bounds? pass object bound to?
 
+        # oper not?
 
+        # todo: can refactor both into ~1
+        if self.selected_cell is not None:  # self.num_selector["state"] == tk.NORMAL:
+            x = e.x_root - self.num_selector.winfo_rootx()
+            y = e.y_root - self.num_selector.winfo_rooty()
 
-        x = e.x_root - self.canvas_board.winfo_rootx()
-        y = e.y_root - self.canvas_board.winfo_rooty()
-        cb = self.canvas_board
-        obj_ids = cb.find_closest(x, y)
-        current = cb.gettags("current")
-        print('items', obj_ids, 'current', current)
-
-        offset = 5  # todo: canvas border offset
-        cbw = self.canvas_board_width
-        cbh = self.canvas_board_height
-        cb = self.canvas_board
-        ns = self.num_selector
-        if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
-            obj_ids = ns.find_closest(x, y)
-            current = ns.gettags("current")
+            offset = 5  # todo: canvas border offset
+            cbw = self.canvas_board_width
+            cbh = self.canvas_board_height
+            ns = self.num_selector
+            if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
+                obj_ids = ns.find_closest(x, y)
+                current = ns.gettags("current")
+                print('items', obj_ids, 'current', current)
+                print(self.num_selector_lookup)
+                for id_ in obj_ids:
+                    if not id_:
+                        continue
+                    if current and ns.gettags(id_)[0] == 'num':
+                        ns.itemconfigure(id_, fill=self.fill[self.fill_count])
+                        val = self.num_selector_lookup.get(id_)
+                        i, j = self.selected_cell
+                        print('i j val:', (i, j, val))
+                        self.limited_update([(i, j, val), ])
+                        self.fill_count = (self.fill_count + 1) % len(self.fill)
+            self.toggle_selector(e)
+            self.selected_cell = None
+        else:
+            x = e.x_root - self.canvas_board.winfo_rootx()
+            y = e.y_root - self.canvas_board.winfo_rooty()
+            cb = self.canvas_board
+            obj_ids = cb.find_closest(x, y)
+            current = cb.gettags("current")
             print('items', obj_ids, 'current', current)
-            for id_ in obj_ids:
-                if not id_:
-                    continue
-                if current and ns.gettags(id_)[0] == 'num':
-                    ns.itemconfigure(id_, fill=self.fill[self.fill_count])
-        self.fill_count = (self.fill_count + 1) % len(self.fill)
-        self.toggle_selector(e)
 
+            offset = 5  # todo: canvas border offset
+            cbw = self.canvas_board_width
+            cbh = self.canvas_board_height
+            print(cbh, x, y)
+            print(cbh - offset)
+            cb = self.canvas_board
+            ns = self.num_selector
+            if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
+                obj_ids = cb.find_closest(x, y)
+                current = cb.gettags("current")
+                print('items', obj_ids, 'current', current)
+                for id_ in obj_ids:
+                    if not id_:
+                        continue
+                    if current and cb.gettags(id_)[0] == 'cell':
+                        cb.itemconfigure(id_, fill=self.fill[self.fill_count])
+                        print('(i, j):', self.board_index_lookup.get(id_))
+                        self.selected_cell = self.board_index_lookup.get(id_)
+                        self.fill_count = (self.fill_count + 1) % len(self.fill)
+                        self.toggle_selector(e)
+        print()
+        # self.toggle_selector(e)
 
     # todo: move fn down
     def toggle_selector(self, e):
@@ -290,6 +424,7 @@ class CanvasGUI(tk.Tk):
         anchor = ''
         if .33 < y_rel < .66 and .33 < x_rel < .66:
             anchor = 'nw'
+
         if y_rel > .66:
             anchor = 's'
         elif y_rel < .33:
@@ -324,11 +459,17 @@ class CanvasGUI(tk.Tk):
 
     def create_title(self):
         font_size = self.font_size
+
+        self.title_container = tk.Canvas(self.container)
+        self.title_container.config(borderwidth=0, highlightthickness=0)
+        self.title_container.pack(before=self.canvas_board)  # todo: order of execution dependence
+
         self.title_label = tk.Label(
             self.title_container,
             text="SUDOKU SOLVER",
             font=(self.board_font, font_size * 2),
-            bg="#fff"
+            bg="#fff",
+            padx=20,
         )
         self.title_label.pack()
 
@@ -397,123 +538,85 @@ class CanvasGUI(tk.Tk):
                     cell_size / 2 + (i * cell_size) + 4,
                     font=(self.board_font, font_size),
                     text='',  # str(i) + str(j)
-                    # tags="cell",
+                    tags="cell",
                 )
 
                 self.canvas_board.lower(canvas_id)
-
-                # self.board_gui_data[i][j].canvas_id = 0
                 self.board_gui_data[i][j].canvas_id = canvas_id
-
                 self.board_gui_data[i][j].text_id = txt_id
 
+                self.board_index_lookup[txt_id] = (i, j)
+                self.board_index_lookup[canvas_id] = (i, j)
+
+
     def controls(self):
-        # OLD TODO standardize the format
-        # OLD TODO eg self.matrix_select["menu"].config(bg='white') vs config
+        # todo: consider self.matrix_select["menu"].config(bg='white') vs config
 
-        font_size = self.font_size
+        font_size = self.font_size * 1.2
 
-        def style_config(instance):
-            instance.config(
-                font=(self.board_font, int(font_size * 1.2)),
-                bg='white',
-                borderwidth=0,
-                highlightthickness=0
-            )
+        # todo refactor
+        def create_and_configure(instance, text=None):
+            font_size = self.font_size * 1.2
+            if type(instance) is not type(tk.Canvas()):
+                instance.config(font=(self.board_font, int(font_size)))
+            instance.config(bg='white', borderwidth=0, highlightthickness=0)
+            if type(instance) is type(tk.Button()):
+                instance.config(text=text, anchor=tk.CENTER)
+                instance.config(relief='sunken', borderwidth=0)
+                instance.config(font=(self.board_font, int(font_size)))
 
-        # todo: move/combine/remove spacers
-        # highlight-thickness is used to center the spacers  # todo: refactor?
-        for i in range(10):
-            spacer = tk.Canvas(
-                self.control_panel,
-                width=50, height=10,
-                bg='white',
-                highlightthickness=2,
-                highlightbackground='white'
-            )
-            spacer.grid(row=0, column=i)
-            spacer = tk.Canvas(
-                self.control_panel,
-                width=50, height=10,
-                bg='white',
-                highlightthickness=0
-            )
-            spacer.grid(row=2, column=i)
+        # note: Canvas has useful options and functionality versus Frame
+        self.control_panel_container = tk.Canvas(self.container)
+        create_and_configure(self.control_panel_container)
+        self.control_panel_container.config(
+            height=self.cell_size, width=self.canvas_board.winfo_reqwidth(),
+        )
+        print('w', self.canvas_board.winfo_reqwidth())
+        self.control_panel_container.pack(fill=tk.BOTH, side=tk.BOTTOM, pady=10)
+
 
         # solve button
-        self.solve_button = tk.Canvas(self.control_panel)
-        self.solve_button.grid(row=1, column=1, columnspan=3)
+        self.solve_button = tk.Button(self.control_panel_container)
+        self.solve_button.place(relx=1/4, rely=.5, anchor=tk.CENTER)
+        create_and_configure(self.solve_button, 'SOLVE')
+        self.solve_button['state'] = tk.DISABLED
 
-        self.solve_button_label = tk.Label(self.solve_button, text="SOLVE")
-        style_config(self.solve_button_label)
-        self.solve_button_label.pack()
-        self.solve_button_label.bind('<Button-1>', lambda event: self.click_solve())
+        # select button
+        self.select_button = tk.Button(self.control_panel_container)
+        create_and_configure(self.select_button, 'SELECT')
+        self.select_button.place(relx=3/4, rely=.5, anchor=tk.CENTER)
 
-        self.solve_button_label_disabled = tk.Label(self.solve_button_label, text="SOLVE", fg='grey')
-        style_config(self.solve_button_label_disabled)
-        self.solve_button_label_disabled.pack()
 
-        # options ("select" menu) button canvas
-        self.options_button = tk.Canvas(self.control_panel, width=150, height=50)
-        self.options_button.grid(row=1, column=6, columnspan=3)
-
-        self.options_button_label = tk.Label(self.options_button, text="SELECT")
-        style_config(self.options_button_label)
-        self.options_button_label.pack()
-        self.options_button_label.bind('<Button-1>', lambda event: self.display_difficulty_menu())
-
-        self.options_button_abort = tk.Label(self.options_button_label, text="ABORT?", fg='black')  # todo color
-        style_config(self.options_button_abort)
-        self.options_button_abort.bind('<Button-1>', lambda event: self.stop_solver())
 
         # difficulty selector
         self.select_menu_container = tk.Canvas(self.canvas_board, width=400, height=100)
-        # def options_menu_options(self, text):  # todo rename?
-        # TODO manually centered text (why + 2)
-        om_master = self.select_menu_container  # self.control_panel # self.canvas_board
 
-        # self.options_menu_00 = Canvas(self.canvas_board, width=150, height=150, bg='orange', highlightthickness=0)
-        self.options_menu_00 = tk.Canvas(om_master, width=110, height=56, bg='grey90')
+        self.options_menu_00 = tk.Canvas(self.select_menu_container, width=110, height=56, bg='grey90')
         self.options_menu_00.config(highlightthickness=2, highlightbackground='black')
-        self.options_menu_00.bind('<Button-1>', self.board_selector)
+        self.options_menu_00.bind('<Button-1>', self.event_handler)
         self.options_menu_00.create_text(55 + 2, 25 + 3, text="Empty", font=(self.board_font, int(font_size)))
 
-        # self.options_menu_01 = Canvas(self.canvas_board, width=149, height=150, bg='yellow', highlightthickness=0)
-        self.options_menu_01 = tk.Canvas(om_master, width=110, height=56, bg='grey90')
+        self.options_menu_01 = tk.Canvas(self.select_menu_container, width=110, height=56, bg='grey90')
         self.options_menu_01.config(highlightthickness=2, highlightbackground='black')
-        self.options_menu_01.bind('<Button-1>', self.board_selector)
+        self.options_menu_01.bind('<Button-1>', self.event_handler)
         self.options_menu_01.create_text(55 + 2, 25 + 3, text="Easy", font=(self.board_font, int(font_size)))
 
-        # self.options_menu_02 = Canvas(self.canvas_board, width=150, height=150, bg='red', highlightthickness=0)
-        self.options_menu_02 = tk.Canvas(om_master, width=110, height=56, bg='grey90')
+        self.options_menu_02 = tk.Canvas(self.select_menu_container, width=110, height=56, bg='grey90')
         self.options_menu_02.config(highlightthickness=2, highlightbackground='black')
-        self.options_menu_02.bind('<Button-1>', self.board_selector)
+        self.options_menu_02.bind('<Button-1>', self.event_handler)
         self.options_menu_02.create_text(55 + 2, 25 + 3, text="Hard", font=(self.board_font, int(font_size)))
 
-    def click_solve(self):
-        self.forget_options_menu()
-        self.solve_button_label_disabled.pack()
-        self.options_button_abort.pack()
-        self.solve_board()
 
-    def display_difficulty_menu(self):
-        """ spawns difficulty menu after clicking 'select' """
-        self.select_menu_container.place(relx=.5, rely=.5, anchor=tk.CENTER)
+        # todo: consider previews?
+        # self.select_menu_container.place(relx=.5, rely=.5, anchor=tk.CENTER)
+        # self.select_menu_container.place_forget()
 
-        # todo STYLE keep both border edges or over lap them?
+        # OLD todo STYLE keep both border edges or over lap them?
         self.options_menu_00.place(relx=.218, rely=.5, anchor=tk.CENTER)
         self.options_menu_01.place(relx=.5, rely=.5, anchor=tk.CENTER)
         self.options_menu_02.place(relx=(1 - .218), rely=.5, anchor=tk.CENTER)
 
-        self.solve_button_label_disabled.pack()  # re-enable solver button
 
-        # todo: review/move
-        '''
-        self.make_mini_boards(test_matrices(01), 0, 0)
-        self.make_mini_boards(test_matrices(02), 1, 0)
-        self.make_mini_boards(test_matrices(03), 2, 0)
-        #self.make_mini_boards(test_matrices(11), 0, 1)
-        '''
 
     def create_options_menu(self):
         # place options menu stuff here
@@ -538,21 +641,7 @@ class CanvasGUI(tk.Tk):
                 self.canvas_board.itemconfigure(text_id, text=number)
                 self.canvas_board.lower(canvas_id)
 
-    def board_selector(self, event):
-        # todo: fix TestMatrices() usage
-        from testing.test_cases import TestMatrices
 
-        board = TestMatrices().matrix_00()
-
-        if event.widget == self.options_menu_01:
-            board = TestMatrices().matrix_01()
-        elif event.widget == self.options_menu_02:
-            board = TestMatrices().matrix_11()  # hard
-
-        self.update_entire_board(board)
-        self.cell_shader(board)
-        self.solve_button_label_disabled.pack_forget()
-        self.forget_options_menu()
 
     def update_entire_board(self, new_board) -> None:
         for i in range(len(new_board)):
@@ -567,6 +656,7 @@ class CanvasGUI(tk.Tk):
                 self.canvas_board.itemconfig(text_id, text=number)
 
     def limited_update(self, changed_cells) -> None:
+        """ changed_cells parameter of type [(i, j, value)] """
         if not changed_cells:
             return
 
@@ -601,7 +691,7 @@ class CanvasGUI(tk.Tk):
 
             if self.abort or not next_empty:
                 self.update_entire_board(curr_board)
-                self.options_button_abort.pack_forget()
+                # self.options_button_abort.pack_forget()
                 self.abort = False
                 break
 
@@ -625,111 +715,21 @@ class CanvasGUI(tk.Tk):
                     self.container.update()  # GUI update
                     last_board = deepcopy(curr_board)
 
-    # def solve_execute(self):
-    #     self.solver_engine()
 
-    def stop_solver(self):
-        self.abort = True
-
-    # todo move?
-    def forget_options_menu(
-            self):  # TODO REMOVE THIS? just use self.select_menu_container.place_forget() where ever it was called
-        # todo can use state=normal/disabled/hidden
-        self.select_menu_container.place_forget()
-        '''
-        self.options_menu_00.place_forget()
-        self.options_menu_01.place_forget()
-        self.options_menu_02.place_forget()
-        '''
-        # self.options_menu_00.grid_forget()
-        # self.options_menu_01.grid_forget()
-        # self.options_menu_02.grid_forget()
-
-    # todo: removed due to design change
-    # def id_matrix_cleanup(self, matrix):
-    #     for each_row in matrix:
-    #         for each_cell in each_row:
-    #             if each_cell != 0:
-    #                 self.canvas_board.delete(each_cell)
-
-    def make_mini_boards2(self, matrix, large_square_x, large_square_y):  # TODO change name [make] and move
-        # todo fix large square x/y usage
-        font_size = self.font_size / 3
-        option_board = matrix  # TODO NAME option_board
-        for x in range(BOARD_SIZE):
-            for y in range(BOARD_SIZE):
-                x_position = ((cell_size / 2 + (x * cell_size) + 4) * 1 / 3)  # readability
-                y_position = ((cell_size / 2 + (y * cell_size) + 4) * 1 / 3)
-                # x_position += 37  # todo fix hardcode
-                # y_position += 78
-                #   x_position += 4  # todo fix hardcode
-                #   y_position += 4
-                # x_position *= large_square_x  # todo fix hardcode
-                # y_position *= large_square_y
-                #   x_position += large_square_x*150
-                #   x_position += large_square_y*150
-                cell_zero_check = option_board[y][x]  # TODO NAME cell_zero_check
-                if cell_zero_check == 0:
-                    cell_zero_check = " "
-                self.text_id_small_matrix_00[y][x] = self.options_menu_02.create_text(x_position, y_position,
-                                                                                      font=(self.board_font, font_size),
-                                                                                      text=cell_zero_check)
-                # self.text_id_small_matrix_00[y][x] = Label(font=(self.board_font, font_size), text=cell_zero_check)
-                # self.text_id_small_matrix_00[y][x].config(bg='white')
-                # self.text_id_small_matrix_00[y][x].place(x=x_position, y=y_position, height=14, width=12)
-
-                # self.text_id_small_matrix_00[y][x].bind('<Button-1>', self.debug_printer)
-
-    def make_mini_boards(self, matrix, large_square_x, large_square_y):  # TODO change name [make] and move
-        # todo fix large square x/y usage
-        font_size = self.font_size / 3
-        option_board = matrix  # TODO NAME option_board
-        for x in range(BOARD_SIZE):
-            for y in range(BOARD_SIZE):
-                x_position = ((cell_size / 2 + (x * cell_size) + 4) * 1 / 3)  # readability
-                y_position = ((cell_size / 2 + (y * cell_size) + 4) * 1 / 3)
-                # x_position += 37  # todo fix hardcode
-                # y_position += 78
-                x_position += 4  # todo fix hardcode
-                y_position += 4
-                # x_position *= large_square_x  # todo fix hardcode
-                # y_position *= large_square_y
-                x_position += large_square_x * 150
-                x_position += large_square_y * 150
-                cell_zero_check = option_board[y][x]  # TODO NAME cell_zero_check
-                if cell_zero_check == 0:
-                    cell_zero_check = " "
-                self.text_id_small_matrix_00[y][x] = self.canvas_board.create_text(x_position, y_position,
-                                                                                   font=(self.board_font, font_size),
-                                                                                   text=cell_zero_check)
-                # self.text_id_small_matrix_00[y][x] = Label(font=(self.board_font, font_size), text=cell_zero_check)
-                # self.text_id_small_matrix_00[y][x].config(bg='white')
-                # self.text_id_small_matrix_00[y][x].place(x=x_position, y=y_position, height=14, width=12)
-
-                # self.text_id_small_matrix_00[y][x].bind('<Button-1>', self.debug_printer)
-
-    def forget_mini_matrices_menu(
-            self):  # TODO what if I put these all on a canvas then forgot that canvas (would have to redraw lines tho)
-        for x in range(9):
-            for y in range(9):
-                # print self.text_id_small_matrix_00
-                changename = self.text_id_small_matrix_00[y][x]
-                self.canvas_board.destroy(changename)
-
-    # todo grab the matrices from a list (click_select as well)
-    def mini_matrix_board_selector(self, event):  # todo rename
-        if event.x < 153 and event.y < 178:
-            board = test_matrices(1)
-        else:
-            print("foo")
-            return
-        self.current_board = board
-        self.update_entire_board()
-        self.solve_button_label_disabled.pack_forget()
-
-        self.forget_options_menu()
-        # forget the mini matrices
-        self.forget_mini_matrices_menu()
+    # todo: deprecated
+    # # todo move?
+    # def forget_options_menu(
+    #         self):  # TODO REMOVE THIS? just use self.select_menu_container.place_forget() where ever it was called
+    #     # todo can use state=normal/disabled/hidden
+    #     self.select_menu_container.place_forget()
+    #     '''
+    #     self.options_menu_00.place_forget()
+    #     self.options_menu_01.place_forget()
+    #     self.options_menu_02.place_forget()
+    #     '''
+    #     # self.options_menu_00.grid_forget()
+    #     # self.options_menu_01.grid_forget()
+    #     # self.options_menu_02.grid_forget()
 
 
 '''
@@ -771,7 +771,6 @@ if __name__ == '__main__':
 
 # TODO create subclasses http://stackoverflow.com/questions/17056211/python-tkinter-option-menu
 
-# TODO cell vs element
 # TODO 3d sudoku?
 
 # TODO microsoft Visual Studio style (highlight and border when mouse over, otherwise no border)
@@ -780,32 +779,10 @@ if __name__ == '__main__':
 # todo broke scaling size with style
 
 # TODO STYLE: offset cells for the 3 pixels lines?
-# TODO STYLE: switch select and solve buttons?
-
-# TODO REFACTOR after learning to handel these <Tkinter.Event instance at 0x02FFBF08> returned from a bind
-# TODO Fix font issues
-
-# TODO config vs configure (config == configure)
-# TODO PERFORMANCE: keep greedy len matrix and, eg, keep using the greedy matrix until the current node is discarded
-# TODO PERFORMANCE: cont: ... can make even better than that. don't want to get too tangent
 
 # TODO REFACTORING: use the create_text method on canvas objects where appropriate (it inherits bindings and is transparent etc)
 
-# TODO visual: the squares are not all exactly the same size and positions are not all exactly the same (off by a couple of pixels here and there)
-
-# TODO visual: lots of visual hackery. bottom of mini boards are not aligned, but are otherwise aligned
-
-# todo wtf does this do __name__ == "__main__":
-
-# todo "create?"
-
-# todo scaling probably a bad idea (would it ever be used? and worth the time/work?)
-
 # todo taskbar icon not displaying
-
-# TODO CRITICAL: i caused 2 or 3 system wide crashes. it may have been from the abort function. not going to test right now
-
-# TODO DIST: TASKBAR ICON NOT SHOWING
 
 
 '''

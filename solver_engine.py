@@ -56,6 +56,8 @@ class SolverEngine:
     @staticmethod
     def _find_empty_greedy(board) -> tuple[int, int]:
         """
+            primary motivation: looks way cooler ;-)
+
             assumes most constrained cell is optimal
             creates a grid of possible moves for each cell
 
