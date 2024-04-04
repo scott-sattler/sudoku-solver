@@ -30,9 +30,10 @@ class CellData:
 class CanvasGUI(tk.Tk):
     # todo: lock loaded board cells
 
+    BOARD_SIZE = 9
+    CELL_SIZE = 50  # cell size: minimum > 25... probably
+
     def __init__(self, *args, **kwargs):
-
-
         debug = False
 
         tk.Tk.__init__(self, *args, **kwargs)
@@ -66,16 +67,13 @@ class CanvasGUI(tk.Tk):
         self.title("")
         self.iconbitmap(default=ICON_PATH)
         self.resizable(width=False, height=False)
-        # self.config(background="white")
-        self.config(background="#ffffff")
+        self.config(background="white")  # "#ffffff"
 
-        self.cell_size = 50
-        cell_size = 50
         self.offset = 40  # todo
-        self.dynamic_size = BOARD_SIZE * cell_size
+        self.dynamic_size = self.BOARD_SIZE * self.CELL_SIZE
 
         self.board_font = "fixedsys"
-        self.font_size = int(12 / 25.000 * cell_size)
+        self.font_size = int(12 / 25.000 * self.CELL_SIZE)
         self.abort = False  # todo better way of doing this?
 
         # primary data structure
@@ -88,105 +86,46 @@ class CanvasGUI(tk.Tk):
 
         self.board_width = 465
         # self.board_height =
-        self.canvas_board_width = 225.000 / 9 / 25 * self.dynamic_size + self.offset / 5 + 2  # todo: review for accuracy
-        self.canvas_board_height = 225.000 / 9 / 25 * self.dynamic_size + self.offset / 5 + 2  # todo: review for accuracy
-        # print('w', self.canvas_board_width, 'h', self.canvas_board_height)
+        self.play_board_width = 225.000 / 9 / 25 * self.dynamic_size + self.offset / 5 + 2  # todo: review for accuracy
+        self.play_board_height = 225.000 / 9 / 25 * self.dynamic_size + self.offset / 5 + 2  # todo: review for accuracy
+        print('w', self.play_board_width, 'h', self.play_board_height)
 
         self.title_container = tk.Canvas(self.container)
-        # self.title_container.pack()
+        self.play_board = tk.Canvas(self.container)
 
-        self.canvas_board = tk.Canvas(self.container)
-        # self.canvas_board.bind("<Button-1>", self.event_handler)
-        # self.canvas_board.bind("<Button-1>", self.process_user_input)
-        # self.canvas_board.pack()
-
-        self.canvas_board.config(
-            height=self.canvas_board_height,
-            width=self.canvas_board_width
+        self.play_board.config(
+            height=self.play_board_height,
+            width=self.play_board_width
         )
 
-        self.canvas_board_width = self.canvas_board.winfo_reqwidth()  # todo: why tho?
-        self.canvas_board_height = self.canvas_board.winfo_reqheight()  # todo: why tho?
-        # print('cb.winfo_req_', self.canvas_board.winfo_reqwidth(), self.canvas_board.winfo_reqheight())
+        self.play_board.config(bg='white', borderwidth=0, highlightthickness=0)
+        self.play_board.pack()
 
-        self.canvas_board.config(borderwidth=0, highlightthickness=0)
-        self.canvas_board.config(bg='white')
-        # self.board_canvas_width = (self.canvas_board.winfo_reqwidth()) / 9.000 / 25 * self.dynamic_size
-        # self.board_canvas_height = (self.canvas_board.winfo_reqheight()) / 9.000 / 25 * self.dynamic_size
-        # print('w', self.board_canvas_width, 'h', self.board_canvas_height)
-        self.canvas_board.pack()
-        # self.canvas_board.bind('<Button-1>', self.mini_matrix_board_selector)
+        self.play_board_width = self.play_board.winfo_reqwidth()  # todo: why tho?
+        self.play_board_height = self.play_board.winfo_reqheight()  # todo: why tho?
 
 
         self.fill_count = 0  # todo: for testing/debugging
-        # ["#FFFFFF", "#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#00FFFF", "#FF00FF", "#C0C0C0", "#808080", "#800000", "#808000", "#008000", "#800080", "#008080", "#000080"]  # noqa
         # self.fill = ['red',     'green',   'blue',    'yellow',  'grey', 'cyan',    'magenta', 'orange',  'purple',  'grey']  # noqa
         self.fill =   ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', 'grey', '#00FFFF', '#FF00FF', '#FF9900', '#8000FF', 'grey']  # noqa
 
         # todo: move to main
         # order dependent
-        self.create_title()
-        self.initialize_board()
-        self.controls()
+        self.initialize_title()
+        self.initialize_play_board()
+        self.initialize_control_board()
 
         self.initialize_num_selector_popup()
         self.bindings()
 
 
-
     def bindings(self):
         # self.bind("<Button-1>", self.print_widget_under_mouse)
 
-        self.bind("<Button-1>", self.event_handler)
-        # self.bind("<Button-3>", self.event_handler)
+        # self.bind("<Button-1>", self.event_handler)
+        self.bind("<ButtonRelease-1>", self.event_handler)
+        self.bind("<Button-3>", self.event_handler)
 
-
-
-    def initialize_num_selector_popup(self):
-        # todo: minor misalignment... rounding errors?
-        cell_size = self.cell_size
-        width = cell_size * 3
-        height = cell_size * 3
-        border_width = 3
-        rect_b_width = 2
-
-        self.num_selector = tk.Canvas(self.canvas_board)
-        self.num_selector.config(
-            width=width,
-            height=height,
-
-            highlightthickness=0,
-            borderwidth=border_width,
-            bg='white',
-            # relief='flat',
-        )
-        self.num_selector.place(relx=0, rely=0)
-        self.num_selector["state"] = tk.DISABLED
-        self.num_selector.place_forget()
-
-        for i in range(3):
-            for j in range(3):
-                canvas_id = self.num_selector.create_rectangle(
-                    j * (width/3) + border_width + rect_b_width,
-                    i * (width/3) + border_width + rect_b_width,
-                    j * (width/3) + cell_size + border_width/3,
-                    i * (width/3) + cell_size + border_width/3,
-                    width=rect_b_width, fill=self.fill[self.fill_count],  # fill='cyan',
-                    tags='num',
-                )
-
-                self.fill_count = (self.fill_count + 1) % len(self.fill)
-                num = (i * 3) + (j + 1)
-                self.num_selector_lookup[canvas_id] = num
-
-                text_id = self.num_selector.create_text(
-                    j * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
-                    i * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
-                    font=(self.board_font, self.font_size),
-                    text=num,
-                    tags='num',
-                )
-                self.num_selector_lookup[text_id] = num
 
     def convert_board(self):
         """ convert to array of int arrays """
@@ -207,39 +146,51 @@ class CanvasGUI(tk.Tk):
             debug = False  # todo: remove
             offset = self.offset / 8  # canvas lines/cells offset
 
-            board = event.widget
+            board = event.widget  # play board OR num selector
             x = event.x_root - board.winfo_rootx()
             y = event.y_root - board.winfo_rooty()
-            cbw = self.canvas_board_width  # todo: change this to something like, self.canvas_board.winfo_reqwidth()
-            cbh = self.canvas_board_height  # todo: change this to something like, self.canvas_board.winfo_reqwidth()
-            cb = self.canvas_board
+            cbw = self.play_board_width  # todo: change this to something like, self.play_board.winfo_reqwidth()
+            cbh = self.play_board_height  # todo: change this to something like, self.play_board.winfo_reqwidth()
+            cb = self.play_board
+
+            # if the mouse event occurred within the event's board
             if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
                 obj_ids = board.find_closest(x, y)
-                current = board.gettags("current")
-                if debug: print('items', obj_ids, 'current', current)  # noqa
-                for id_ in obj_ids:
-                    if not id_: continue
-                    if current and board.gettags(id_)[0] == 'cell':
-                        if debug: print('(i, j):', self.board_index_lookup.get(id_))  # noqa
-                        self.selected_cell = self.board_index_lookup.get(id_)
-                        self.toggle_selector(event)
-                    elif current and board.gettags(id_)[0] == 'num':
-                        val = self.num_selector_lookup.get(id_)
-                        i, j = self.selected_cell
-                        if debug: print('i j val:', (i, j, val))  # noqa
-                        self.limited_update([(i, j, val), ])
-                        self.selected_cell = None
-                        self.toggle_selector(event)
+                obj_tag = board.gettags("current")
 
-                    board.itemconfigure(id_, fill=self.fill[self.fill_count])
+                if debug: print('items', obj_ids, 'obj_tag', obj_tag)  # noqa
+                if self.selected_cell:
+                    print('still selected')
+
+                id_ = obj_ids[0]
+                # if board cell was selected
+                if board.gettags(id_)[0] == 'cell':
+                    # spawn the num selector, and save the ij cell
+                    if debug: print('(i, j):', self.board_index_lookup.get(id_))  # noqa
+                    self.selected_cell = self.board_index_lookup.get(id_)
+                    self.toggle_num_selector(event)
+                # if the num selector was selected
+                elif board.gettags(id_)[0] == 'num':
+                    val = self.num_selector_lookup.get(id_)
+                    i, j = self.selected_cell
+                    pb_obj_id = self.board_gui_data[i][j].canvas_id
+                    if debug: print('i j val:', (i, j, val))  # noqa
+                    self.limited_update([(i, j, val), ])
+                    self.selected_cell = None
+                    self.toggle_num_selector(event)
+                    # board.itemconfigure(id_, fill=self.fill[self.fill_count])  # fills num selector
+                    cb.itemconfigure(pb_obj_id, fill=self.fill[self.fill_count])
+
+
                     self.fill_count = (self.fill_count + 1) % len(self.fill)
 
+        # todo: refactor
         def board_selector(event):
             # todo: fix TestMatrices() usage
             from testing.test_cases import TestMatrices
 
             board = TestMatrices().matrix_00()
-            print(event, event.widget)
+
             if event.widget == self.options_menu_01:
                 board = TestMatrices().matrix_01()
             elif event.widget == self.options_menu_02:
@@ -286,8 +237,13 @@ class CanvasGUI(tk.Tk):
             else:  # solve_button.cget('text') == 'ABORT?'
                 self.abort = True
 
-        print('mouse-button:', e.num)
-        if e.widget in [self.canvas_board, self.num_selector]:
+
+        if e.num == 3:
+            self.debugging_tools_change_obj_color(e)
+            return
+
+        # if debug: print("<Button-1>") if e.num == 1 else ...
+        if e.widget in [self.play_board, self.num_selector]:
             """ handles board user entry """
             board_input(e)
         elif e.widget == self.select_button and self.select_button['state'] != tk.DISABLED:
@@ -311,11 +267,11 @@ class CanvasGUI(tk.Tk):
                 print('INVALID BOARD! :(')
 
     # todo: move fn down
-    def toggle_selector(self, e):
-        board_width = self.canvas_board.winfo_width()
-        board_height = self.canvas_board.winfo_height()
-        x = e.x_root - self.canvas_board.winfo_rootx()
-        y = e.y_root - self.canvas_board.winfo_rooty()
+    def toggle_num_selector(self, e):
+        board_width = self.play_board.winfo_width()
+        board_height = self.play_board.winfo_height()
+        x = e.x_root - self.play_board.winfo_rootx()
+        y = e.y_root - self.play_board.winfo_rooty()
         x_rel = x / board_width
         y_rel = y / board_height
 
@@ -342,12 +298,12 @@ class CanvasGUI(tk.Tk):
             self.num_selector.place_forget()
 
 
-    def create_title(self):
+    def initialize_title(self):
         font_size = self.font_size
 
         self.title_container = tk.Canvas(self.container)
         self.title_container.config(borderwidth=0, highlightthickness=0)
-        self.title_container.pack(before=self.canvas_board)  # todo: order of execution dependence
+        self.title_container.pack(before=self.play_board)  # todo: order of execution dependence
 
         self.title_label = tk.Label(
             self.title_container,
@@ -358,7 +314,7 @@ class CanvasGUI(tk.Tk):
         )
         self.title_label.pack()
 
-    def initialize_board(self):
+    def initialize_play_board(self):
         """
         - create board lines
         - initialize (populate) board_gui_data matrix
@@ -367,10 +323,10 @@ class CanvasGUI(tk.Tk):
         board_size = len(self.board_gui_data)
 
         font_size = self.font_size
-        cell_size = self.cell_size
+        cell_size = self.CELL_SIZE
         offset = self.offset
-        cbw = self.canvas_board.winfo_reqwidth()
-        cbh = self.canvas_board.winfo_reqheight()
+        cbw = self.play_board.winfo_reqwidth()
+        cbh = self.play_board.winfo_reqheight()
 
         # board_width = self.board_width
 
@@ -388,7 +344,7 @@ class CanvasGUI(tk.Tk):
                 y_0 = 0
                 y_1 = cbh
                 width = 3
-            self.canvas_board.create_line(x_0, y_0, x_1, y_1, width=width)
+            self.play_board.create_line(x_0, y_0, x_1, y_1, width=width)
 
         for y_shift in range(board_size - 1):
             if (y_shift + 1) % 3 != 0:
@@ -403,13 +359,13 @@ class CanvasGUI(tk.Tk):
                 y_0 = (y_shift + 1) * cell_size + offset / 8
                 y_1 = (y_shift + 1) * cell_size + offset / 8
                 width = 3
-            self.canvas_board.create_line(x_0, y_0, x_1, y_1, width=width)
+            self.play_board.create_line(x_0, y_0, x_1, y_1, width=width)
 
         # initialize board_gui_data matrix
         # creates canvas and text box for each cell
         for i in range(len(self.board_gui_data)):
             for j in range(len(self.board_gui_data[0])):  # assumes rectangular
-                canvas_id = self.canvas_board.create_rectangle(
+                canvas_id = self.play_board.create_rectangle(
                     j * 50 + self.offset / 8,
                     i * 50 + self.offset / 8,
                     (j + 1) * 50 + self.offset / 8,
@@ -418,7 +374,7 @@ class CanvasGUI(tk.Tk):
                     tags="cell",
                 )
 
-                txt_id = self.canvas_board.create_text(
+                txt_id = self.play_board.create_text(
                     cell_size / 2 + (j * cell_size) + 4,
                     cell_size / 2 + (i * cell_size) + 4,
                     font=(self.board_font, font_size),
@@ -426,15 +382,62 @@ class CanvasGUI(tk.Tk):
                     tags="cell",
                 )
 
-                self.canvas_board.lower(canvas_id)
+                self.play_board.lower(canvas_id)
                 self.board_gui_data[i][j].canvas_id = canvas_id
                 self.board_gui_data[i][j].text_id = txt_id
 
                 self.board_index_lookup[txt_id] = (i, j)
                 self.board_index_lookup[canvas_id] = (i, j)
 
+    def initialize_num_selector_popup(self):
+        # todo: minor misalignment... rounding errors?
+        cell_size = self.CELL_SIZE
+        width = cell_size * 3
+        height = cell_size * 3
+        border_width = 3
+        rect_b_width = 2
 
-    def controls(self):
+        self.num_selector = tk.Canvas(self.play_board)
+        self.num_selector.config(
+            width=width,
+            height=height,
+
+            highlightthickness=0,
+            borderwidth=border_width,
+            bg='white',
+            # relief='flat',
+        )
+        self.num_selector.place(relx=0, rely=0)
+        self.num_selector["state"] = tk.DISABLED
+        self.num_selector.place_forget()
+
+        for i in range(3):
+            for j in range(3):
+                canvas_id = self.num_selector.create_rectangle(
+                    j * (width/3) + border_width + rect_b_width,
+                    i * (width/3) + border_width + rect_b_width,
+                    j * (width/3) + cell_size + border_width/3,
+                    i * (width/3) + cell_size + border_width/3,
+                    width=rect_b_width, fill=self.fill[self.fill_count],  # fill='cyan',
+                    tags='num',
+                )
+
+                self.fill_count = (self.fill_count + 1) % len(self.fill)
+                num = (i * 3) + (j + 1)
+                self.num_selector_lookup[canvas_id] = num
+
+                text_id = self.num_selector.create_text(
+                    j * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
+                    i * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
+                    font=(self.board_font, self.font_size),
+                    text=num,
+                    tags='num',
+                )
+                self.num_selector_lookup[text_id] = num
+
+
+
+    def initialize_control_board(self):
         # todo: consider self.matrix_select["menu"].config(bg='white') vs config
 
         font_size = self.font_size * 1.2
@@ -454,7 +457,7 @@ class CanvasGUI(tk.Tk):
         self.control_panel_container = tk.Canvas(self.container)
         create_and_configure(self.control_panel_container)
         self.control_panel_container.config(
-            height=self.cell_size, width=self.canvas_board.winfo_reqwidth(),
+            height=self.CELL_SIZE, width=self.play_board.winfo_reqwidth(),
         )
         self.control_panel_container.pack(fill=tk.Y, side=tk.BOTTOM, pady=10)
 
@@ -482,7 +485,7 @@ class CanvasGUI(tk.Tk):
 
         # todo: refactor this menu
         # difficulty selector
-        self.select_menu_container = tk.Canvas(self.canvas_board, width=400, height=100)
+        self.select_menu_container = tk.Canvas(self.play_board, width=400, height=100)
 
         self.options_menu_00 = tk.Canvas(self.select_menu_container, width=110, height=56, bg='grey90')
         self.options_menu_00.config(highlightthickness=2, highlightbackground='black')
@@ -529,9 +532,9 @@ class CanvasGUI(tk.Tk):
                     fill = ''
                     number = ''
 
-                self.canvas_board.itemconfigure(canvas_id, fill=fill)
-                self.canvas_board.itemconfigure(text_id, text=number)
-                self.canvas_board.lower(canvas_id)
+                self.play_board.itemconfigure(canvas_id, fill=fill)
+                self.play_board.itemconfigure(text_id, text=number)
+                self.play_board.lower(canvas_id)
 
 
 
@@ -545,7 +548,7 @@ class CanvasGUI(tk.Tk):
                 if number == 0:
                     number = ''
 
-                self.canvas_board.itemconfig(text_id, text=number)
+                self.play_board.itemconfig(text_id, text=number)
 
     def limited_update(self, changed_cells) -> None:
         """ changed_cells parameter of type [(i, j, value)] """
@@ -559,42 +562,51 @@ class CanvasGUI(tk.Tk):
             if val == 0:  # prevents display of zeros
                 val = ''
 
-            self.canvas_board.itemconfig(text_id, text=val)
+            self.play_board.itemconfig(text_id, text=val)
 
 
-    def print_widget_under_mouse(self, e):
-        offset = 5  # canvas border offset
+    def debugging_tools_change_obj_color(self, e):
+        # bug: does not correctly change color of main board's numbers
 
-        print('\n' + str(e))
-        print(self.winfo_width(), self.winfo_height())
+        board = e.widget
+        print(board)
 
-        x_rel = self.winfo_pointerx()
-        y_rel = self.winfo_pointery()
-        widget = self.winfo_containing(x_rel, y_rel)
+        board = e.widget  # play board OR num selector
+        x = e.x_root - board.winfo_rootx()
+        y = e.y_root - board.winfo_rooty()
+        print(x, y)
 
-        x = e.x_root - self.canvas_board.winfo_rootx()
-        y = e.y_root - self.canvas_board.winfo_rooty()
+        print(board.winfo_children())
 
-        print('xy rel:', x, y)
-        print('xy abs:', x_rel, y_rel)
+        obj_ids = []
+        if hasattr(board, 'find_closest'):
+            obj_ids = board.find_closest(x, y)
+        obj_tags = ()
+        if hasattr(board, 'gettags'):
+            obj_tags = board.gettags("current")
 
-        print("widget:", widget, widget.winfo_id())
-        print(type(widget))
+        print('obj_tag', obj_tags)
+        print('items', obj_ids)
+
+        id_ = None
+        if obj_ids:
+            id_ = obj_ids[0]
+        tag = None
+        if obj_tags:
+            tag = obj_tags[0]
+
+        if tag == 'cell':
+            i, j = self.board_index_lookup.get(id_)
+            play_board_id = self.board_gui_data[i][j].canvas_id
+            self.play_board.itemconfigure(play_board_id, fill=self.fill[self.fill_count])
+        elif tag == 'num':
+            board.itemconfigure(id_, fill=self.fill[self.fill_count])
+        elif obj_tags:
+            board.itemconfigure(id_, fill=self.fill[self.fill_count])
+        else:
+            board.config(background=self.fill[self.fill_count])
 
         self.fill_count = (self.fill_count + 1) % len(self.fill)
-
-        cbw = self.canvas_board_width
-        cbh = self.canvas_board_height
-        cb = self.canvas_board
-        if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
-            obj_ids = cb.find_closest(x, y)
-            current = cb.gettags("current")
-            print('items', obj_ids, 'current', current)
-            for id_ in obj_ids:
-                if not id_:
-                    continue
-                if current and cb.gettags(id_)[0] == 'cell':
-                    cb.itemconfigure(id_, fill=self.fill[self.fill_count])
 
 
 
@@ -634,8 +646,7 @@ class CanvasGUI(tk.Tk):
 '''
 
 if __name__ == '__main__':
-    BOARD_SIZE = 9
-    CELL_SIZE = 50  # cell size: minimum > 25... probably
+
 
     benchmarking = False
 
