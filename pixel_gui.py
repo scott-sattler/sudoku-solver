@@ -16,20 +16,6 @@ with open(ICON_PATH, 'wb') as icon_file:
     icon_file.write(ICON)
 
 
-###############################################################################
-# testing tools file
-###############################################################################
-
-# move to separate file
-def verified_solution():
-    return
-
-
-###############################################################################
-# END testing tools file
-###############################################################################
-
-
 class CellData:
     def __init__(self, value=None, text_id=None, canvas_id=None, locked=False):
         self.value = value  # actual value to display (as text)
@@ -66,11 +52,8 @@ class CanvasGUI(tk.Tk):
 
         self.control_panel_container = None
         self.solve_button = None
-        self.solve_button_label = None
-        self.solve_button_label_disabled = None
         self.select_button = None
-        self.select_button_label = None
-        self.options_button_abort = None
+        self.verify_button = None
 
         self.select_menu_container = None
         self.options_menu_00 = None
@@ -149,55 +132,15 @@ class CanvasGUI(tk.Tk):
         self.initialize_num_selector_popup()
         self.bindings()
 
-        # cbw = self.canvas_board_width
-        # cbh = self.canvas_board_height
-        # print(cbw, cbh)
-        # print(self.canvas_board.winfo_reqwidth())
-
 
 
     def bindings(self):
         # self.bind("<Button-1>", self.print_widget_under_mouse)
-        # self.bind("<Button-3>", self.spawn_selector)
 
-        # self.bind("<Button-1>", self.process_user_input)
         self.bind("<Button-1>", self.event_handler)
+        # self.bind("<Button-3>", self.event_handler)
 
 
-
-    def print_widget_under_mouse(self, e):
-        offset = 5  # canvas border offset
-
-        print('\n' + str(e))
-        print(self.winfo_width(), self.winfo_height())
-
-        x_rel = self.winfo_pointerx()
-        y_rel = self.winfo_pointery()
-        widget = self.winfo_containing(x_rel, y_rel)
-
-        x = e.x_root - self.canvas_board.winfo_rootx()
-        y = e.y_root - self.canvas_board.winfo_rooty()
-
-        print('xy rel:', x, y)
-        print('xy abs:', x_rel, y_rel)
-
-        print("widget:", widget, widget.winfo_id())
-        print(type(widget))
-
-        self.fill_count = (self.fill_count + 1) % len(self.fill)
-
-        cbw = self.canvas_board_width
-        cbh = self.canvas_board_height
-        cb = self.canvas_board
-        if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
-            obj_ids = cb.find_closest(x, y)
-            current = cb.gettags("current")
-            print('items', obj_ids, 'current', current)
-            for id_ in obj_ids:
-                if not id_:
-                    continue
-                if current and cb.gettags(id_)[0] == 'cell':
-                    cb.itemconfigure(id_, fill=self.fill[self.fill_count])
 
     def initialize_num_selector_popup(self):
         # todo: minor misalignment... rounding errors?
@@ -244,6 +187,10 @@ class CanvasGUI(tk.Tk):
                     tags='num',
                 )
                 self.num_selector_lookup[text_id] = num
+
+    def convert_board(self):
+        """ convert to array of int arrays """
+        return [[cell.value for cell in row] for row in self.board_gui_data]
 
     def event_handler(self, e):
         debug = False  # todo: remove
@@ -308,7 +255,7 @@ class CanvasGUI(tk.Tk):
             from solver_engine import SolverEngine
             se = SolverEngine()
 
-            board_data = [[cell.value for cell in row] for row in self.board_gui_data]
+            board_data = self.convert_board()
             generator_solver = se.solve_board(board_data)
 
             for next_limited_update in generator_solver:
@@ -327,7 +274,6 @@ class CanvasGUI(tk.Tk):
 
             self.select_button['state'] = tk.NORMAL
 
-
         def click_solve():
             if self.solve_button['state'] == tk.DISABLED:
                 return
@@ -340,11 +286,9 @@ class CanvasGUI(tk.Tk):
             else:  # solve_button.cget('text') == 'ABORT?'
                 self.abort = True
 
-        print("self.select_button['state']", self.select_button['state'])
+        print('mouse-button:', e.num)
         if e.widget in [self.canvas_board, self.num_selector]:
             """ handles board user entry """
-            print('usr board inp')
-            # self.process_user_input(e)
             board_input(e)
         elif e.widget == self.select_button and self.select_button['state'] != tk.DISABLED:
             """ spawns difficulty menu after clicking 'select' """
@@ -358,6 +302,13 @@ class CanvasGUI(tk.Tk):
             board_selector(e)
         elif e.widget == self.solve_button:
             click_solve()
+        elif e.widget == self.verify_button:
+            from solver_engine import SolverEngine
+            se = SolverEngine()
+            if se.validate_board(self.convert_board()):
+                print('VALIDATED! :D')
+            else:
+                print('INVALID BOARD! :(')
 
     # todo: move fn down
     def toggle_selector(self, e):
@@ -505,19 +456,28 @@ class CanvasGUI(tk.Tk):
         self.control_panel_container.config(
             height=self.cell_size, width=self.canvas_board.winfo_reqwidth(),
         )
-        self.control_panel_container.pack(fill=tk.BOTH, side=tk.BOTTOM, pady=10)
+        self.control_panel_container.pack(fill=tk.Y, side=tk.BOTTOM, pady=10)
 
 
         # solve button
         self.solve_button = tk.Button(self.control_panel_container)
-        self.solve_button.place(relx=1/4, rely=.5, anchor=tk.CENTER)
+        # self.solve_button.place(relx=1/4, rely=.5, anchor=tk.CENTER)
         create_and_configure(self.solve_button, 'SOLVE')
         self.solve_button['state'] = tk.DISABLED
+        self.solve_button.grid(row=0, column=0)
+
+        # verify button
+        self.verify_button = tk.Button(self.control_panel_container)
+        create_and_configure(self.verify_button, 'VERIFY')
+        # self.verify_button.place(relx=2/4, rely=.5, anchor=tk.CENTER)
+        self.verify_button.grid(row=0, column=1)
 
         # select button
         self.select_button = tk.Button(self.control_panel_container)
         create_and_configure(self.select_button, 'SELECT')
-        self.select_button.place(relx=3/4, rely=.5, anchor=tk.CENTER)
+        # self.select_button.place(relx=3/4, rely=.5, anchor=tk.CENTER)
+        self.select_button.grid(row=0, column=2)
+
 
 
         # todo: refactor this menu
@@ -601,51 +561,41 @@ class CanvasGUI(tk.Tk):
 
             self.canvas_board.itemconfig(text_id, text=val)
 
-    # todo: keep here or move to solver file?
-    def convert_board(self):
-        """ convert to array of int arrays """
-        return [[cell.value for cell in row] for row in self.board_gui_data]
 
-    # todo: refactor out, to main
-    def solve_board(self):
-        from copy import deepcopy
-        board_data = self.convert_board()
+    def print_widget_under_mouse(self, e):
+        offset = 5  # canvas border offset
 
-        from solver_engine import SolverEngine
-        se = SolverEngine()
+        print('\n' + str(e))
+        print(self.winfo_width(), self.winfo_height())
 
-        # seed agenda
-        agenda = [board_data]
-        last_board = deepcopy(board_data)
-        while agenda:
-            curr_board = agenda.pop()
-            next_empty = se.find_empty(curr_board)
+        x_rel = self.winfo_pointerx()
+        y_rel = self.winfo_pointery()
+        widget = self.winfo_containing(x_rel, y_rel)
 
-            if self.abort or not next_empty:
-                self.update_entire_board(curr_board)
-                # self.options_button_abort.pack_forget()
-                self.abort = False
-                break
+        x = e.x_root - self.canvas_board.winfo_rootx()
+        y = e.y_root - self.canvas_board.winfo_rooty()
 
-            i, j = next_empty
-            for val in range(9, 0, -1):
-                curr_board[i][j] = val
-                rule_h_v = se.hv_rule_check(curr_board, i, j)
-                rule_s = se.s_rule_check(curr_board, i, j)
-                if rule_h_v and rule_s:
-                    agenda.append(deepcopy(curr_board))
+        print('xy rel:', x, y)
+        print('xy abs:', x_rel, y_rel)
 
-                    next_limited_update = list()
-                    for i_u in range(9):
-                        for j_u in range(9):
-                            val = curr_board[i_u][j_u]
-                            if val != last_board[i_u][j_u]:
-                                next_limited_update.append((i_u, j_u, val))
-                    self.limited_update(next_limited_update)
-                    # self.master.update()  # GUI update
-                    # self.root.update()
-                    self.container.update()  # GUI update
-                    last_board = deepcopy(curr_board)
+        print("widget:", widget, widget.winfo_id())
+        print(type(widget))
+
+        self.fill_count = (self.fill_count + 1) % len(self.fill)
+
+        cbw = self.canvas_board_width
+        cbh = self.canvas_board_height
+        cb = self.canvas_board
+        if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
+            obj_ids = cb.find_closest(x, y)
+            current = cb.gettags("current")
+            print('items', obj_ids, 'current', current)
+            for id_ in obj_ids:
+                if not id_:
+                    continue
+                if current and cb.gettags(id_)[0] == 'cell':
+                    cb.itemconfigure(id_, fill=self.fill[self.fill_count])
+
 
 
     # todo: deprecated
@@ -696,10 +646,8 @@ if __name__ == '__main__':
     app.mainloop()
 
 '''
-# TODO arrange canvas/frames/whatever NOT based on draw order COMPLETE-ISH
-# TODO http://stackoverflow.com/questions/19284857/instance-attribute-attribute-name-defined-outside-init
 
-# TODO font changes with cell size, but not with Sudoku board size
+# TODO http://stackoverflow.com/questions/19284857/instance-attribute-attribute-name-defined-outside-init
 
 # TODO create subclasses http://stackoverflow.com/questions/17056211/python-tkinter-option-menu
 
@@ -708,13 +656,12 @@ if __name__ == '__main__':
 # TODO microsoft Visual Studio style (highlight and border when mouse over, otherwise no border)
 
 # TODO CHANGE 50 BOARD VALUES
+
 # todo broke scaling size with style
+# TODO font changes with cell size, but not with Sudoku board size
 
 # TODO STYLE: offset cells for the 3 pixels lines?
 
-# TODO REFACTORING: use the create_text method on canvas objects where appropriate (it inherits bindings and is transparent etc)
-
 # todo taskbar icon not displaying
-
 
 '''

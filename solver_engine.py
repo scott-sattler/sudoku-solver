@@ -24,10 +24,6 @@ class NeedsName:
         self.valid = set()
 
 
-    def add(self, val):
-        set.valid.add()
-
-
 class ListNode:
     def __init__(self, val, prv=None, nxt=None):
         self.val = val
@@ -49,8 +45,27 @@ class SolverEngine:
     def s_rule_check(self, board, i, j) -> bool:
         return self._s_rule_check(board, i, j)
 
+    # todo: refactor
+    def validate_board(self, board_data):
+        for i in range(len(board_data)):
+            for j in range(len(board_data)):
+                if not self.hv_rule_check(board_data, i, j):
+                    return False
+                if not self.s_rule_check(board_data, i, j):
+                    return False
+        if not self._find_empty(board_data):
+            return True
+        return False
 
     def solve_board(self, board_data):
+        return self._solve_board(board_data)
+
+
+
+    ###########################################################################
+
+
+    def _solve_board(self, board_data):
         from copy import deepcopy
 
         # seed agenda
@@ -81,9 +96,6 @@ class SolverEngine:
                     if sent == 'stop':
                         break
                     last_board = deepcopy(curr_board)
-
-
-    ###########################################################################
 
 
     @staticmethod
@@ -167,12 +179,13 @@ class SolverEngine:
         return True
 
     @staticmethod
-    def _find_empty(board) -> tuple[int, int]:
+    def _find_empty(board) -> tuple[int, int] | bool:
         """ finds the first empty from (0, 0) """
         for i in range(len(board)):
             for j in range(len(board[0])):
                 if board[i][j] == 0:
                     return i, j
+        return False
 
     # correctness/naive/brute force implementation
     @staticmethod
