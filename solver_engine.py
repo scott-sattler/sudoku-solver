@@ -50,6 +50,39 @@ class SolverEngine:
         return self._s_rule_check(board, i, j)
 
 
+    def solve_board(self, board_data):
+        from copy import deepcopy
+
+        # seed agenda
+        agenda = [board_data]
+        last_board = deepcopy(board_data)
+        while agenda:
+            curr_board = agenda.pop()
+            next_empty = self.find_empty(curr_board)
+
+            if not next_empty:
+                break
+
+            i, j = next_empty
+            for val in range(9, 0, -1):
+                curr_board[i][j] = val
+                rule_h_v = self.hv_rule_check(curr_board, i, j)
+                rule_s = self.s_rule_check(curr_board, i, j)
+                if rule_h_v and rule_s:
+                    agenda.append(deepcopy(curr_board))
+
+                    next_limited_update = list()
+                    for i_u in range(9):
+                        for j_u in range(9):
+                            val = curr_board[i_u][j_u]
+                            if val != last_board[i_u][j_u]:
+                                next_limited_update.append((i_u, j_u, val))
+                    sent = yield next_limited_update
+                    if sent == 'stop':
+                        break
+                    last_board = deepcopy(curr_board)
+
+
     ###########################################################################
 
 

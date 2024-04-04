@@ -149,10 +149,10 @@ class CanvasGUI(tk.Tk):
         self.initialize_num_selector_popup()
         self.bindings()
 
-        cbw = self.canvas_board_width
-        cbh = self.canvas_board_height
-        print(cbw, cbh)
-        print(self.canvas_board.winfo_reqwidth())
+        # cbw = self.canvas_board_width
+        # cbh = self.canvas_board_height
+        # print(cbw, cbh)
+        # print(self.canvas_board.winfo_reqwidth())
 
 
 
@@ -213,7 +213,6 @@ class CanvasGUI(tk.Tk):
             height=height,
 
             highlightthickness=0,
-            # highlightbackground='green',
             borderwidth=border_width,
             bg='white',
             # relief='flat',
@@ -247,8 +246,10 @@ class CanvasGUI(tk.Tk):
                 self.num_selector_lookup[text_id] = num
 
     def event_handler(self, e):
-        print(e, e.widget)
-        print()
+        debug = False  # todo: remove
+        if debug:
+            print(e, e.widget)
+            print()
 
         empty_board = self.options_menu_00
         easy_board = self.options_menu_01
@@ -260,15 +261,11 @@ class CanvasGUI(tk.Tk):
             offset = self.offset / 8  # canvas lines/cells offset
 
             board = event.widget
-
             x = event.x_root - board.winfo_rootx()
             y = event.y_root - board.winfo_rooty()
-
             cbw = self.canvas_board_width  # todo: change this to something like, self.canvas_board.winfo_reqwidth()
             cbh = self.canvas_board_height  # todo: change this to something like, self.canvas_board.winfo_reqwidth()
-
             cb = self.canvas_board
-
             if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
                 obj_ids = board.find_closest(x, y)
                 current = board.gettags("current")
@@ -279,7 +276,7 @@ class CanvasGUI(tk.Tk):
                         if debug: print('(i, j):', self.board_index_lookup.get(id_))  # noqa
                         self.selected_cell = self.board_index_lookup.get(id_)
                         self.toggle_selector(event)
-                    if current and board.gettags(id_)[0] == 'num':
+                    elif current and board.gettags(id_)[0] == 'num':
                         val = self.num_selector_lookup.get(id_)
                         i, j = self.selected_cell
                         if debug: print('i j val:', (i, j, val))  # noqa
@@ -289,7 +286,6 @@ class CanvasGUI(tk.Tk):
 
                     board.itemconfigure(id_, fill=self.fill[self.fill_count])
                     self.fill_count = (self.fill_count + 1) % len(self.fill)
-
 
         def board_selector(event):
             # todo: fix TestMatrices() usage
@@ -308,24 +304,49 @@ class CanvasGUI(tk.Tk):
             self.solve_button['state'] = tk.NORMAL
             self.select_menu_container.place_forget()
 
+        def solve_board():
+            from solver_engine import SolverEngine
+            se = SolverEngine()
+
+            board_data = [[cell.value for cell in row] for row in self.board_gui_data]
+            generator_solver = se.solve_board(board_data)
+
+            for next_limited_update in generator_solver:
+                if self.abort:
+                    # generator_solver.send('stop')
+                    self.abort = False
+                    break
+
+                if not next_limited_update:
+                    break
+                self.limited_update(next_limited_update)
+                self.update()
+
+            self.solve_button.config(text='SOLVE')
+            self.solve_button['state'] = tk.DISABLED
+
+            self.select_button['state'] = tk.NORMAL
+
+
         def click_solve():
             if self.solve_button['state'] == tk.DISABLED:
                 return
             if self.solve_button.cget('text') == 'SOLVE':
                 self.solve_button.config(text='ABORT?')
                 self.select_menu_container.place_forget()
-                self.solve_board()
-            else:
-                self.solve_button.config(text='SOLVE')
-                self.solve_button['state'] = tk.DISABLED
+                self.select_button['state'] = tk.DISABLED
+                solve_board()
+                self.select_button['state'] = tk.NORMAL
+            else:  # solve_button.cget('text') == 'ABORT?'
                 self.abort = True
 
+        print("self.select_button['state']", self.select_button['state'])
         if e.widget in [self.canvas_board, self.num_selector]:
             """ handles board user entry """
             print('usr board inp')
             # self.process_user_input(e)
             board_input(e)
-        elif e.widget == self.select_button:
+        elif e.widget == self.select_button and self.select_button['state'] != tk.DISABLED:
             """ spawns difficulty menu after clicking 'select' """
             if self.select_menu_container.winfo_viewable():
                 self.select_menu_container.place_forget()
@@ -484,7 +505,6 @@ class CanvasGUI(tk.Tk):
         self.control_panel_container.config(
             height=self.cell_size, width=self.canvas_board.winfo_reqwidth(),
         )
-        print('w', self.canvas_board.winfo_reqwidth())
         self.control_panel_container.pack(fill=tk.BOTH, side=tk.BOTTOM, pady=10)
 
 
