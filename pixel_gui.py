@@ -255,13 +255,14 @@ class CanvasGUI(tk.Tk):
         hard_board = self.options_menu_02
         boards = [empty_board, easy_board, hard_board]
 
-        def board_input(e):
+        def board_input(event):
+            debug = False  # todo: remove
             offset = self.offset / 8  # canvas lines/cells offset
 
-            board = e.widget
+            board = event.widget
 
-            x = e.x_root - board.winfo_rootx()
-            y = e.y_root - board.winfo_rooty()
+            x = event.x_root - board.winfo_rootx()
+            y = event.y_root - board.winfo_rooty()
 
             cbw = self.canvas_board_width  # todo: change this to something like, self.canvas_board.winfo_reqwidth()
             cbh = self.canvas_board_height  # todo: change this to something like, self.canvas_board.winfo_reqwidth()
@@ -271,21 +272,20 @@ class CanvasGUI(tk.Tk):
             if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
                 obj_ids = board.find_closest(x, y)
                 current = board.gettags("current")
-                print('items', obj_ids, 'current', current)
+                if debug: print('items', obj_ids, 'current', current)  # noqa
                 for id_ in obj_ids:
                     if not id_: continue
                     if current and board.gettags(id_)[0] == 'cell':
-                        print('(i, j):', self.board_index_lookup.get(id_))
+                        if debug: print('(i, j):', self.board_index_lookup.get(id_))  # noqa
                         self.selected_cell = self.board_index_lookup.get(id_)
-                        self.toggle_selector(e)
+                        self.toggle_selector(event)
                     if current and board.gettags(id_)[0] == 'num':
                         val = self.num_selector_lookup.get(id_)
                         i, j = self.selected_cell
-                        print('i j val:', (i, j, val))
+                        if debug: print('i j val:', (i, j, val))  # noqa
                         self.limited_update([(i, j, val), ])
                         self.selected_cell = None
-                        self.toggle_selector(e)
-
+                        self.toggle_selector(event)
 
                     board.itemconfigure(id_, fill=self.fill[self.fill_count])
                     self.fill_count = (self.fill_count + 1) % len(self.fill)
@@ -320,9 +320,6 @@ class CanvasGUI(tk.Tk):
                 self.solve_button['state'] = tk.DISABLED
                 self.abort = True
 
-
-
-
         if e.widget in [self.canvas_board, self.num_selector]:
             """ handles board user entry """
             print('usr board inp')
@@ -340,76 +337,6 @@ class CanvasGUI(tk.Tk):
             board_selector(e)
         elif e.widget == self.solve_button:
             click_solve()
-
-
-
-    def process_user_input(self, e):
-        # todo: requre currently open window focus
-        # todo: val check
-
-        # abstract:
-        # replace cb/ns
-        # 'num'/'cll'
-        # bounds? pass object bound to?
-
-        # oper not?
-
-        # todo: can refactor both into ~1
-        if self.selected_cell is not None:  # self.num_selector["state"] == tk.NORMAL:
-            x = e.x_root - self.num_selector.winfo_rootx()
-            y = e.y_root - self.num_selector.winfo_rooty()
-
-            offset = 5  # todo: canvas border offset
-            cbw = self.canvas_board_width
-            cbh = self.canvas_board_height
-            ns = self.num_selector
-            if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
-                obj_ids = ns.find_closest(x, y)
-                current = ns.gettags("current")
-                print('items', obj_ids, 'current', current)
-                print(self.num_selector_lookup)
-                for id_ in obj_ids:
-                    if not id_:
-                        continue
-                    if current and ns.gettags(id_)[0] == 'num':
-                        ns.itemconfigure(id_, fill=self.fill[self.fill_count])
-                        val = self.num_selector_lookup.get(id_)
-                        i, j = self.selected_cell
-                        print('i j val:', (i, j, val))
-                        self.limited_update([(i, j, val), ])
-                        self.fill_count = (self.fill_count + 1) % len(self.fill)
-            self.toggle_selector(e)
-            self.selected_cell = None
-        else:
-            x = e.x_root - self.canvas_board.winfo_rootx()
-            y = e.y_root - self.canvas_board.winfo_rooty()
-            cb = self.canvas_board
-            obj_ids = cb.find_closest(x, y)
-            current = cb.gettags("current")
-            print('items', obj_ids, 'current', current)
-
-            offset = 5  # todo: canvas border offset
-            cbw = self.canvas_board_width
-            cbh = self.canvas_board_height
-            print(cbh, x, y)
-            print(cbh - offset)
-            cb = self.canvas_board
-            ns = self.num_selector
-            if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
-                obj_ids = cb.find_closest(x, y)
-                current = cb.gettags("current")
-                print('items', obj_ids, 'current', current)
-                for id_ in obj_ids:
-                    if not id_:
-                        continue
-                    if current and cb.gettags(id_)[0] == 'cell':
-                        cb.itemconfigure(id_, fill=self.fill[self.fill_count])
-                        print('(i, j):', self.board_index_lookup.get(id_))
-                        self.selected_cell = self.board_index_lookup.get(id_)
-                        self.fill_count = (self.fill_count + 1) % len(self.fill)
-                        self.toggle_selector(e)
-        print()
-        # self.toggle_selector(e)
 
     # todo: move fn down
     def toggle_selector(self, e):
@@ -434,16 +361,6 @@ class CanvasGUI(tk.Tk):
         elif x_rel < .33:
             anchor += 'w'
 
-        # x_rel = self.winfo_pointerx()
-        # y_rel = self.winfo_pointery()
-        # xx = x_rel / self.winfo_width()
-        # yy = y_rel / self.winfo_height()
-        # xx = e.x_root
-        # yy = e.y_root
-
-        # print(e)
-        # print('rel:', x_rel, y_rel)
-
         if self.num_selector.cget("state") == tk.DISABLED:
             self.num_selector["state"] = tk.NORMAL
             self.num_selector.place(relx=x_rel, rely=y_rel, anchor=anchor)
@@ -452,10 +369,6 @@ class CanvasGUI(tk.Tk):
             self.num_selector["state"] = tk.DISABLED
             self.num_selector.place_forget()
 
-        # self.selector["state"] = tk.DISABLED
-        # self.update()
-
-        # self.selector.lift('')
 
     def create_title(self):
         font_size = self.font_size
@@ -587,7 +500,7 @@ class CanvasGUI(tk.Tk):
         self.select_button.place(relx=3/4, rely=.5, anchor=tk.CENTER)
 
 
-
+        # todo: refactor this menu
         # difficulty selector
         self.select_menu_container = tk.Canvas(self.canvas_board, width=400, height=100)
 
@@ -606,7 +519,6 @@ class CanvasGUI(tk.Tk):
         self.options_menu_02.bind('<Button-1>', self.event_handler)
         self.options_menu_02.create_text(55 + 2, 25 + 3, text="Hard", font=(self.board_font, int(font_size)))
 
-
         # todo: consider previews?
         # self.select_menu_container.place(relx=.5, rely=.5, anchor=tk.CENTER)
         # self.select_menu_container.place_forget()
@@ -622,7 +534,7 @@ class CanvasGUI(tk.Tk):
         # place options menu stuff here
         return  # remove this
 
-    # todo: consider FURTHER refactor ?
+    # todo: consider refactor ?
     def cell_shader(self, shaded_cells):
         """ colors cells dark """
         len_i = len(self.board_gui_data)
