@@ -99,7 +99,7 @@ class SolverEngine:
 
 
     @staticmethod
-    def _find_empty_greedy(board) -> tuple[int, int]:
+    def _find_empty_greedy(board) -> tuple[int, int] | None:
         """
             primary motivation: looks way cooler ;-)
 
@@ -137,6 +137,8 @@ class SolverEngine:
                     continue
                 s_i = i // 3
                 s_j = (j // 3) % 3
+                if board[i][j] not in sqr_moves[s_i][s_j]:
+                    return None
                 sqr_moves[s_i][s_j].remove(board[i][j])
 
         # find intersection of vertical, horizontal, and square
