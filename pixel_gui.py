@@ -412,8 +412,6 @@ class CanvasGUI(tk.Tk):
                 )
                 self.num_selector_lookup[text_id] = num
 
-
-
     def initialize_control_board(self):
         def formatted_button(master, text, font_resize):
             font_size = int(self.font_size * font_resize)
@@ -430,9 +428,9 @@ class CanvasGUI(tk.Tk):
             width=self.play_board.winfo_reqwidth())
         self.control_panel_container.pack(fill=tk.Y, side=tk.BOTTOM, pady=10)
 
-        # buttons parent
-        cpc = self.control_panel_container
         # solve, verify, and select buttons
+        cpc = self.control_panel_container  # buttons parent
+
         self.solve_button = formatted_button(cpc, 'SOLVE', 1.2)
         self.solve_button.grid(row=0, column=0)
         self.solve_button['state'] = tk.DISABLED
@@ -442,7 +440,6 @@ class CanvasGUI(tk.Tk):
 
         self.select_button = formatted_button(cpc, 'SELECT', 1.2)
         self.select_button.grid(row=0, column=2)
-
 
     def initialize_board_selector_menu(self):
         def formatted_button(master, text, font_resize):
@@ -456,11 +453,9 @@ class CanvasGUI(tk.Tk):
             return button
 
         # difficulty selector backdrop
-        self.select_board_menu_container = (
-            tk.Canvas(self.play_board))
+        self.select_board_menu_container = (tk.Canvas(self.play_board))
         self.select_board_menu_container.config(
-            highlightthickness=2, highlightbackground='black'
-        )
+            highlightthickness=2, highlightbackground='black')
 
         # exclusively for button alignment  # todo: local?
         select_board_menu_backdrop = (tk.Frame(self.select_board_menu_container))
