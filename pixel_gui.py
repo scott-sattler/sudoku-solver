@@ -76,7 +76,7 @@ class CanvasGUI(tk.Tk):
 
         self.board_font = "fixedsys"
         self.font_size = int(12 / 25.000 * self.CELL_SIZE)
-        self.abort = False  # todo better way of doing this?
+        self.abort = False  # todo: better way of doing this?; consider removal/refactor
 
         # primary data structure
         self.board_gui_data = [[CellData() for _ in range(9)] for __ in range(9)]
@@ -235,6 +235,8 @@ class CanvasGUI(tk.Tk):
         if e.num == 2:
             self.debugging_tools_change_obj_color(e)
             return
+
+        print(e, e.widget)
 
         # if debug: print("<Button-1>") if e.num == 1 else ...
         if e.widget in [self.play_board, self.num_selector_popup]:
@@ -413,6 +415,7 @@ class CanvasGUI(tk.Tk):
                 self.num_selector_lookup[text_id] = num
 
     def initialize_control_board(self):
+        """ these buttons differ from board select menu buttons """
         def formatted_button(master, text, font_resize):
             font_size = int(self.font_size * font_resize)
             button = tk.Button(master)
@@ -442,14 +445,30 @@ class CanvasGUI(tk.Tk):
         self.select_button.grid(row=0, column=2)
 
     def initialize_board_selector_menu(self):
+        """ to add borders, these buttons differ from control board buttons """
         def formatted_button(master, text, font_resize):
+            # """ border necessary due to tk limitations """
+            # border = tk.Frame(master, highlightbackground='black', highlightthickness=2)
+            # font_size = int(self.font_size * font_resize)
+            # button = tk.Button(border)
+            # button.config(text=text, anchor=tk.CENTER)
+            # button.config(bg='white', relief='sunken', borderwidth=0)
+            # button.config(font=(self.board_font, font_size))
+            # button.config(height=1, width=7)  # width in chars
+            # button.pack()
+            # return border
+
+            """  """
+            """ labels necessary due to tk limitations """
+            """ functionally most similar to buttons """
             font_size = int(self.font_size * font_resize)
-            button = tk.Button(master)
+            button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
-            button.config(bg='white', relief='solid', borderwidth=2)
-            # button.config(highlightthickness=2, highlightbackground='black')
+            button.config(bg='white', relief='sunken', borderwidth=0)
+            button.config(highlightbackground='black', highlightthickness=2)
             button.config(font=(self.board_font, font_size))
             button.config(height=1, width=7)  # width in chars
+            button.config(pady=8)
             return button
 
         # difficulty selector backdrop
