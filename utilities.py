@@ -11,6 +11,15 @@ def matrix_01():
     return test_matrix
 
 
+def rgb_hex_to_int(rgb):
+    if len(rgb) < 6:
+        raise ValueError
+    rgb = rgb[1:] if rgb[0] == '#' else rgb
+    rgb_hex = (rgb[-6:-4], rgb[-4:-2], rgb[-2:])
+    to_ints = map(lambda x: int(x, 16), rgb_hex)
+    return tuple(to_ints)
+
+
 def strip_print(board):
     # ''.join(['  '.join(map(str, row)) + '\n' for row in board])
     out = list()
@@ -53,3 +62,13 @@ def pretty_print(board):
 if __name__ == '__main__':
     print(strip_print(matrix_01()))
     print(pretty_print(matrix_01()))
+    print(rgb_hex_to_int('#ffffff'))
+    print(rgb_hex_to_int('#808080'))
+    print(rgb_hex_to_int('#000000'))
+    print(rgb_hex_to_int('0xffffff'))
+    print(rgb_hex_to_int('0x808080'))
+    print(rgb_hex_to_int('0x000000'))
+    print(rgb_hex_to_int('ffffff'))
+    print(rgb_hex_to_int('808080'))
+    print(rgb_hex_to_int('000000'))
+    # print(rgb_hex_to_int('00000'))

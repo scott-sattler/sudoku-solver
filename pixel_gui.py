@@ -30,9 +30,15 @@ class CanvasGUI(tk.Tk):
     CELL_SIZE = 50
 
     def __init__(self, *args, **kwargs):
+        print('''
+        todo: load/generate boards
+        review and resolve existing todos
+        
+        ''')
+
         tk.Tk.__init__(self, *args, **kwargs)
         self.container = tk.Frame(self)
-        self.container.config(background="white")
+        self.container.config(background="#ffffff")
         self.container.pack(side="top", fill="both", expand=True)
 
         self.title('')
@@ -103,15 +109,15 @@ class CanvasGUI(tk.Tk):
         self.play_board.config(
             height=self.play_board_height,
             width=self.play_board_width,
-            bg='white', borderwidth=0, highlightthickness=0
+            bg='#ffffff', borderwidth=0, highlightthickness=0,
         )
         self.play_board.pack()
 
         # todo: for testing/debugging/fun
         self.fill_count = 0
         # self.fill = ['red',     'green',   'blue',    'yellow',  'grey', 'cyan',    'magenta', 'orange',  'purple',  'grey']  # noqa
-        self.fill = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', 'grey', '#00FFFF', '#FF00FF', '#FF9900', '#8000FF',
-                     'grey']  # noqa
+        self.fill = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#BEBEBE', '#00FFFF', '#FF00FF', '#FF9900', '#8000FF',
+                     '#BEBEBE']  # noqa
 
         # order dependent  # todo: move to main
         self.initialize_title()
@@ -119,10 +125,11 @@ class CanvasGUI(tk.Tk):
         self.initialize_control_board()
         self.initialize_board_selector_menu()
         self.initialize_num_selector_popup()
-        self.initialize_validation_popup()
         self.bindings()
 
         self.update_entire_board(self.welcome_message, state_change=False)
+
+        # self.lower()
 
     def bindings(self):
         # self.bind("<Button-1>", self.event_handler)
@@ -132,18 +139,32 @@ class CanvasGUI(tk.Tk):
         # self.bind("<space>", lambda e: print(self.board_state_change))
 
         def button_enter(e):
-            e.widget['bg'] = "#EEEEEE"
+            shade = 32
+            rgb = e.widget['bg'][1:]
+            rgb_hex = (rgb[:2], rgb[2:4], rgb[4:])
+            to_ints = tuple(map(lambda x: int(f'{x:<02}', 16), rgb_hex))
+            offset = tuple(map(lambda x: (x - shade) % 256, to_ints))
+            # restore = tuple(map(lambda x: (x + shade) % 256, to_ints))
+            cycled = '#' + ''.join(map(lambda x: f'{hex(x)[2:]:<02}', offset))
+            e.widget['bg'] = cycled
 
         def button_leave(e):
-            e.widget['bg'] = 'white'
+            shade = 32
+            rgb = e.widget['bg'][1:]
+            rgb_hex = (rgb[:2], rgb[2:4], rgb[4:])
+            to_ints = tuple(map(lambda x: int(f'{x:<02}', 16), rgb_hex))
+            # offset = tuple(map(lambda x: (x - shade) % 256, to_ints))
+            restore = tuple(map(lambda x: (x + shade) % 256, to_ints))
+            cycled = '#' + ''.join(map(lambda x: f'{hex(x)[2:]:<02}', restore))
+            e.widget['bg'] = cycled
 
         """ manually bind all buttons because my_boss chose dated framework """
         s_b_m_c = self.select_board_menu_container
         c_p_c = self.control_panel_container
         s_b_m_c_children = s_b_m_c.winfo_children()[0].winfo_children()
         """                ^ container              ^ backdrop              """
-        c_p_c_children = c_p_c.winfo_children()
-        """              ^ container                                        """
+        c_p_c_children = c_p_c.winfo_children()[0].winfo_children()
+        """              ^ container            ^ backdrop                  """
         all_children = s_b_m_c_children + c_p_c_children
         for button in all_children:
             button.bind("<Enter>", button_enter)
@@ -156,19 +177,23 @@ class CanvasGUI(tk.Tk):
             print(f"{'selected_cell ':.<30} {self.selected_cell}")
             print(f"{'board_state_change ':.<30} {self.board_state_change}")
             print()
-        def debug_invert_color(element):  # noqa
+        def invert_color(element):  # noqa
             if element is None: return  # noqa
-            color = element.cget('bg')
-            if color == 'SystemButtonFace': color = '#f0f0f0'  # noqa
-            if color == 'white':  color = '#FFFFFF'  # noqa
-            hex_color = f'0x{color[1:]}'
-            inverted = (int(hex_color, 16) + int("0x800000", 16)) % int('0x1000000', 16)
-            inverted_color = f'#{hex(inverted)[2:]:06}'
-            element.config(bg=inverted_color)
+            rgb = element.cget('bg')
+            if rgb == 'SystemButtonFace': rgb = '#f0f0f0'  # noqa
+            if rgb == 'white':  rgb = '#FFFFFF'  # noqa
+            rgb = rgb[1:] if rgb[0] == '#' else rgb
+            shade = 128
+            rgb_hex = (rgb[:2], rgb[2:4], rgb[4:])
+            to_ints = tuple(map(lambda x: int(x, 16), rgb_hex))
+            offset = tuple(map(lambda x: (x + shade) % 256, to_ints))
+            cycled = '#' + ''.join(map(lambda x: hex(x)[2:], offset))
+            element.config(bg=cycled)
         key_map = {
             '<h>': lambda e: print('text containing help commands'),
             '<d>': lambda e: debug_debug_info(),
-            '<c>': lambda e: debug_invert_color(self.has_lock),
+            '<l>': lambda e: invert_color(self.has_lock),
+            '<c>': lambda e: self.debugging_tools_change_obj_color(e, False),
             # '<b>': lambda e: print(u.pretty_print([[cell.value for cell in row] for row in self.board_gui_data])),  # noqa
             '<b>': lambda e: print(u.strip_print([[cell.value for cell in row] for row in self.board_gui_data])),  # noqa
         }
@@ -184,6 +209,7 @@ class CanvasGUI(tk.Tk):
         hard_board = self.hard_board_button
         boards = [empty_board, easy_board, hard_board]
 
+
         def convert_board():
             """ convert to array of int arrays """
             return [[cell.value for cell in row] for row in self.board_gui_data]
@@ -193,8 +219,8 @@ class CanvasGUI(tk.Tk):
                 return
 
             board = event.widget  # play board OR num selector
-            x = event.x_root - board.winfo_rootx()
-            y = event.y_root - board.winfo_rooty()
+            x = event.x_root - board.winfo_rootx()  # todo: is this e.x?
+            y = event.y_root - board.winfo_rooty()  # todo: is this e.y?
             cb = self.play_board
             cbw = cb.winfo_reqwidth()
             cbh = cb.winfo_reqwidth()
@@ -210,8 +236,10 @@ class CanvasGUI(tk.Tk):
                     # ignore locked (loaded board) cells
                     i, j = self.board_index_lookup.get(id_)
                     if self.board_gui_data[i][j].locked:
+                        reset_ui_state()
                         return
 
+                    # delete cell entry
                     if e.num == 3:
                         self.limited_update([(i, j, 0)])
                         c_i, c_j = self.board_index_lookup.get(id_)
@@ -224,7 +252,6 @@ class CanvasGUI(tk.Tk):
                         self.spawn_num_selector(event)
                         self.has_lock = self.play_board
                     else:
-                        self.selected_cell = None
                         reset_ui_state()
 
                 # if the num selector was selected
@@ -277,6 +304,7 @@ class CanvasGUI(tk.Tk):
             # self.select_button['state'] = tk.NORMAL
 
         # todo: keep validation result until board state changes
+        # todo: probably refactor (eg board_state_change confusing)
         def click_solve():
             if self.solve_button['state'] == tk.DISABLED:
                 return
@@ -306,7 +334,7 @@ class CanvasGUI(tk.Tk):
                 # self.verify_button['state'] = tk.DISABLED
                 self.title_label.config(bg='#53ec53')
                 self.solve_button['state'] = tk.DISABLED
-                # todo: bug: manually solving and validating does not disable solve button
+                # FIXED? todo: bug: manually solving and validating does not disable solve button
             else:
                 self.title_label.config(
                     text='invalid :(',
@@ -324,9 +352,11 @@ class CanvasGUI(tk.Tk):
             self.debugging_tools_change_obj_color(e)
             return
 
+        # clears, on any input, valid/invalid results
+        if self.title_label.cget('text') != self.title_text:
+            self.title_label.config(text=self.title_text, bg='#ffffff')
 
         if e.widget in [self.play_board, self.num_selector_popup]:
-            # todo: handling same types of things in different places
             # todo: handling same types of things in different places
             # todo: handling same types of things in different places
 
@@ -341,6 +371,7 @@ class CanvasGUI(tk.Tk):
             """ spawns difficulty menu after clicking 'select' """
             if self.select_button['state'] == tk.DISABLED:
                 return
+
             # does not have lock
             if self.has_lock != self.select_board_menu_container:
                 # other has lock
@@ -353,24 +384,13 @@ class CanvasGUI(tk.Tk):
                 self.has_lock = self.select_board_menu_container
             # ~ self.select_board_menu_container.winfo_viewable():
             elif self.select_board_menu_container == self.has_lock:
-                # self.select_board_menu_container.place_forget()
-                # self.has_lock = None
                 reset_ui_state()
         elif e.widget in boards:
             board_selector(e)
-
             self.solve_button['state'] = tk.NORMAL
             self.verify_button['state'] = tk.NORMAL
             self.board_loaded = True
             reset_ui_state()
-
-            # self.has_lock = None
-
-            # self.board_state_change = True
-
-            # self.select_board_menu_container.place_forget()
-            # self.num_selector_popup.place_forget()
-
 
         elif e.widget == self.solve_button:
             if self.has_lock:
@@ -382,9 +402,10 @@ class CanvasGUI(tk.Tk):
             if self.verify_button['state'] == tk.NORMAL:
                 verify()
 
+        # todo: this was created as a sentinel for the title, but is misused in the click_solve() code...
         if self.board_state_change:
             """ restores title to original state on any user input """
-            self.title_label.config(text=self.title_text, bg='white')
+            self.title_label.config(text=self.title_text, bg='#ffffff')
             self.board_state_change = False
 
             self.verify_button['state'] = tk.NORMAL
@@ -482,19 +503,6 @@ class CanvasGUI(tk.Tk):
                 self.board_index_lookup[txt_id] = (i, j)
                 self.board_index_lookup[canvas_id] = (i, j)
 
-    def initialize_validation_popup(self):
-        # self.validation_message = tk.Label(self.play_board)
-        # self.validation_message.config(
-        #     text='(IN)VALIDATED!',
-        #     font=(self.board_font, int(self.font_size * 1.8)),
-        #     bg='white',
-        #     padx=40,
-        #     pady=20,
-        # )
-        # self.validation_message.place(relx=.5, rely=.1, anchor=tk.CENTER)
-        pass
-
-
 
     def initialize_num_selector_popup(self):
         # todo: minor misalignment... rounding errors?
@@ -511,7 +519,7 @@ class CanvasGUI(tk.Tk):
 
             highlightthickness=0,
             borderwidth=border_width,
-            bg='white',
+            bg='#ffffff',
             # relief='flat',
         )
         self.num_selector_popup.place(relx=0, rely=0)
@@ -548,14 +556,14 @@ class CanvasGUI(tk.Tk):
             # font_size = int(self.font_size * f_scale)
             # button = tk.Button(master)
             # button.config(text=text, anchor=tk.CENTER)
-            # button.config(bg='white', relief='sunken', borderwidth=0)
+            # button.config(bg='#ffffff', relief='sunken', borderwidth=0)
             # button.config(font=(self.board_font, font_size))
             # return button
 
             font_size = int(self.font_size * f_scale)
             button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
-            button.config(bg='white', borderwidth=0)
+            button.config(bg='#ffffff', borderwidth=0)
             button.config(width=8)
             button.config(font=(self.board_font, font_size))
             return button
@@ -564,12 +572,12 @@ class CanvasGUI(tk.Tk):
         self.control_panel_container = tk.Canvas(self.container)
         self.control_panel_container.config(
             width=self.play_board.winfo_reqwidth(),
-            height=self.CELL_SIZE, bg='white', highlightthickness=0,)
+            height=self.CELL_SIZE, bg='#ffffff', highlightthickness=0,)
         self.control_panel_container.pack(fill=tk.BOTH, side=tk.BOTTOM, ipady=10)
 
         # solve, verify, and select buttons
         c_p_c = self.control_panel_container  # buttons parent
-        foo = tk.Frame(c_p_c, bg='white')
+        foo = tk.Frame(c_p_c, bg='#ffffff')
         foo.place(relx=.5, rely=.5, anchor=tk.CENTER)
 
         self.solve_button = formatted_button(foo, 'SOLVE', 1.2)
@@ -591,7 +599,7 @@ class CanvasGUI(tk.Tk):
             # font_size = int(self.font_size * f_scale)
             # button = tk.Button(border)
             # button.config(text=text, anchor=tk.CENTER)
-            # button.config(bg='white', relief='sunken', borderwidth=0)
+            # button.config(bg='#ffffff', relief='sunken', borderwidth=0)
             # button.config(font=(self.board_font, font_size))
             # button.config(height=1, width=7)  # width in chars
             # button.pack()
@@ -603,7 +611,7 @@ class CanvasGUI(tk.Tk):
             font_size = int(self.font_size * f_scale)
             button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
-            button.config(bg='white', relief='sunken', borderwidth=0)
+            button.config(bg='#ffffff', relief='sunken', borderwidth=0)
             button.config(highlightbackground='black', highlightthickness=2)
             button.config(font=(self.board_font, font_size))
             button.config(height=1, width=7)  # width in chars
@@ -699,34 +707,56 @@ class CanvasGUI(tk.Tk):
         elif x_rel < .33:
             anchor += 'w'
 
-        # todo: refactored from toggle to spawn
-        # if not self.num_selector_popup.winfo_viewable():
-        #     self.num_selector_popup.place(relx=x_rel, rely=y_rel, anchor=anchor)
-        # else:
-        #     self.num_selector_popup.place_forget()
-
         self.num_selector_popup.place(relx=x_rel, rely=y_rel, anchor=anchor)
 
 
-    def debugging_tools_change_obj_color(self, e):
+    def debugging_tools_change_obj_color(self, e, invert_color=False):
         # bug: does not correctly change color of main board's numbers
-
         board = e.widget
-        print(board)
+        print('board / e.widget', board)
 
-        board = e.widget  # play board OR num selector
-        x = e.x_root - board.winfo_rootx()
-        y = e.y_root - board.winfo_rooty()
-        print(x, y)
+        # board = e.widget  # play board OR num selector
 
-        print(board.winfo_children())
+        # top left corner of app
+        print('e.widget winfo root xy', e.widget.winfo_rootx(), e.widget.winfo_rooty())
+
+        # relative pixel screen position
+        print('event xy_root', e.x_root, e.y_root)
+
+        # app window x y position
+        x = e.x_root - e.widget.winfo_rootx()
+        y = e.y_root - e.widget.winfo_rooty()
+        print('x y', x, y)
+        # this takes absolute pixel screen position
+        widget = self.winfo_containing(e.x_root, e.y_root)
+        print("widget under mouse:", widget)
+        print('.........................')
+
+        # constant, actual dimensions of app
+        # req_w = e.widget.winfo_reqwidth()
+        # req_h = e.widget.winfo_reqheight()
+        # print('req w h', req_w, req_h)
+        # print('.........................')
+
+        # print('winfo xy', e.widget.winfo_x(), e.widget.winfo_y())
+        # print('.........................')
+
 
         obj_ids = []
-        if hasattr(board, 'find_closest'):
-            obj_ids = board.find_closest(x, y)
+        if hasattr(widget, 'find_closest'):
+            """
+            unclear why, but the board seems to not recognize being offset,
+            and appears to expect absolute screen coordinates that are offset
+            by its position relative to the window...
+            or, maybe it's the function being used...
+            """
+            if widget == self.play_board:
+                x_b = x - self.play_board.winfo_x()
+                y_b = y - self.play_board.winfo_y()
+                obj_ids = self.play_board.find_closest(x_b, y_b)
         obj_tags = ()
-        if hasattr(board, 'gettags'):
-            obj_tags = board.gettags("current")
+        if hasattr(widget, 'gettags'):
+            obj_tags = widget.gettags("current")
 
         print('obj_tag', obj_tags)
         print('items', obj_ids)
@@ -738,54 +768,23 @@ class CanvasGUI(tk.Tk):
         if obj_tags:
             tag = obj_tags[0]
 
-        if tag == 'cell':
-            i, j = self.board_index_lookup.get(id_)
-            play_board_id = self.board_gui_data[i][j].canvas_id
-            self.play_board.itemconfigure(play_board_id, fill=self.fill[self.fill_count])
-        elif tag == 'num':
-            board.itemconfigure(id_, fill=self.fill[self.fill_count])
-        elif obj_tags:
-            board.itemconfigure(id_, fill=self.fill[self.fill_count])
-        else:
-            board.config(background=self.fill[self.fill_count])
+        color = self.fill[self.fill_count]
+
+        if type(widget) is type(tk.Frame()):
+            print('Frame')
+            widget.configure(id_, bg=color)
+        if type(widget) is type(tk.Canvas()):
+            print('Canvas')
+            if tag == 'cell':
+                widget.itemconfigure(id_,  fill=color)
+            else:
+                widget.config(bg=color)
+        if type(widget) is type(tk.Label()):
+            print('Label')
+            widget.configure(id_, bg=color)
 
         self.fill_count = (self.fill_count + 1) % len(self.fill)
         print()
-
-    # todo: deprecated
-    # # todo move?
-    # def forget_options_menu(
-    #         self):  # TODO REMOVE THIS? just use self.select_board_menu_container.place_forget() where ever it was called
-    #     # todo can use state=normal/disabled/hidden
-    #     self.select_board_menu_container.place_forget()
-    #     '''
-    #     self.empty_board_button.place_forget()
-    #     self.easy_board_button.place_forget()
-    #     self.hard_board_button.place_forget()
-    #     '''
-    #     # self.empty_board_button.grid_forget()
-    #     # self.easy_board_button.grid_forget()
-    #     # self.hard_board_button.grid_forget()
-
-
-'''
-    # TODO option menu not used
-    def option_select_display(self):  # TODO this does not seem necessary
-        #self.solve_button["text"] = "SOLVE"
-        #self.solve_button["state"] = "normal"
-
-        self.board_selector()
-        self.update_board()
-
-        self.id_matrix_cleanup(self.shaded_id_matrix)  # delete shaded cells
-        self.cell_shader()
-'''
-
-'''
-        #self.options_menu_options = {"All Zeros": test_matrices(00), "Matrix 01": test_matrices(01), "Matrix 02": test_matrices(02)}
-        #self.options_menu_options = ("All Zeros", "Matrix 01", "Matrix 02")
-
-'''
 
 if __name__ == '__main__':
     benchmarking = False
@@ -802,16 +801,10 @@ if __name__ == '__main__':
 
 # TODO create subclasses http://stackoverflow.com/questions/17056211/python-tkinter-option-menu
 
-# TODO 3d sudoku?
-
-# TODO microsoft Visual Studio style (highlight and border when mouse over, otherwise no border)
-
-# TODO CHANGE 50 BOARD VALUES
+# todo change 50 board values ?
 
 # todo broke scaling size with style
-# TODO font changes with cell size, but not with Sudoku board size
-
-# TODO STYLE: offset cells for the 3 pixels lines?
+# todo font changes with cell size, but not with Sudoku board size
 
 # todo taskbar icon not displaying
 
