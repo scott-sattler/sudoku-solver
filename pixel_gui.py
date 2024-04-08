@@ -20,6 +20,15 @@ class CellData:
         self.text_id = text_id
         self.canvas_id = canvas_id
         self.locked = locked  # locked when loading a board
+        # self.parent = None
+        # self.color = '#ffffff'
+
+    # def set_color(self, color=None) -> None:
+    #     if color is None:
+    #         color = self.color
+    #     else:
+    #         self.color = color
+    #     self.parent.itemconfigure(fill=color)
 
     def __repr__(self):
         return str((self.value, self.text_id, self.canvas_id))
@@ -348,7 +357,6 @@ class CanvasGUI(tk.Tk):
                 # self.verify_button['state'] = tk.DISABLED
                 self.title_label.config(bg='#53ec53')
                 self.solve_button['state'] = tk.DISABLED
-                # FIXED? todo: bug: manually solving and validating does not disable solve button
             else:
                 self.title_label.config(
                     text='invalid :(',
@@ -834,8 +842,6 @@ if __name__ == '__main__':
     app.mainloop()
 
 '''
-
-# TODO http://stackoverflow.com/questions/19284857/instance-attribute-attribute-name-defined-outside-init
 
 # TODO create subclasses http://stackoverflow.com/questions/17056211/python-tkinter-option-menu
 
