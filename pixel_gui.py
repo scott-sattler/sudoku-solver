@@ -30,6 +30,8 @@ class CanvasGUI(tk.Tk):
     CELL_SIZE = 50
 
     def __init__(self, *args, **kwargs):
+        import matrix_library as ml
+
         print('''
         todo: load/generate boards
         review and resolve existing todos
@@ -64,6 +66,9 @@ class CanvasGUI(tk.Tk):
         self.select_button = None
         self.verify_button = None
 
+        self.colors_button = None  # todo: implement
+        self.cell_colors = False
+
         self.select_board_menu_container = None
         self.empty_board_button = None
         self.easy_board_button = None
@@ -84,18 +89,6 @@ class CanvasGUI(tk.Tk):
         self.board_index_lookup = dict()
         self.num_selector_lookup = dict()
 
-        self.welcome_message = [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            ['S', 'E', 'L', 'E', 'C', 'T', 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            ['Y', 'O', 'U', 'R', 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            ['B', 'O', 'A', 'R', 'D', 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            ['T', 'O', 0, 'B', 'E', 'G', 'I', 'N', 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ]
-
         """ primary data structure """
         self.board_gui_data = [[CellData() for _ in range(9)] for __ in range(9)]
 
@@ -113,11 +106,21 @@ class CanvasGUI(tk.Tk):
         )
         self.play_board.pack()
 
-        # todo: for testing/debugging/fun
-        self.fill_count = 0
-        # self.fill = ['red',     'green',   'blue',    'yellow',  'grey', 'cyan',    'magenta', 'orange',  'purple',  'grey']  # noqa
-        self.fill = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#BEBEBE', '#00FFFF', '#FF00FF', '#FF9900', '#8000FF',
-                     '#BEBEBE']  # noqa
+        self.fill_count = 0  # allows cycling; current only in debug keybind
+        '''            red        green      blue       yellow     grey       cyan       magenta    orange     purple  '''  # noqa
+        self.fill = ['#FF3333', '#33FF33', '#3333FF', '#FFFF33', '#777777', '#33FFFF', '#FF33FF', '#FF9933', '#8833FF']  # noqa
+
+        self.welcome_message = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ['S', 'E', 'L', 'E', 'C', 'T', 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ['Y', 'O', 'U', 'R', 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ['B', 'O', 'A', 'R', 'D', 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ['T', 'O', 0, 'B', 'E', 'G', 'I', 'N', 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
 
         # order dependent  # todo: move to main
         self.initialize_title()
@@ -129,14 +132,20 @@ class CanvasGUI(tk.Tk):
 
         self.update_entire_board(self.welcome_message, state_change=False)
 
-        # self.lower()
+        # self.update()
+        # self.colors_button = tk.Label(self.container)
+        # self.colors_button.config(text='C', font=(self.board_font, self.font_size),)
+        # height = self.title_container.winfo_reqheight() / self.winfo_reqheight()
+        # self.colors_button.place(relx=1, rely=height, anchor=tk.NE)
+
 
     def bindings(self):
         # self.bind("<Button-1>", self.event_handler)
         self.bind("<ButtonRelease-1>", self.event_handler)
-        self.bind("<Button-2>", self.event_handler)
-        self.bind("<Button-3>", self.event_handler)
-        # self.bind("<space>", lambda e: print(self.board_state_change))
+        # self.bind("<Button-2>", self.event_handler)
+        self.bind("<ButtonRelease-3>", self.event_handler)
+        self.bind("<c>", lambda e: self.toggle_color())
+
 
         def button_enter(e):
             shade = 32
@@ -190,12 +199,12 @@ class CanvasGUI(tk.Tk):
             cycled = '#' + ''.join(map(lambda x: hex(x)[2:], offset))
             element.config(bg=cycled)
         key_map = {
-            '<h>': lambda e: print('text containing help commands'),
-            '<d>': lambda e: debug_debug_info(),
-            '<l>': lambda e: invert_color(self.has_lock),
-            '<c>': lambda e: self.debugging_tools_change_obj_color(e, False),
-            # '<b>': lambda e: print(u.pretty_print([[cell.value for cell in row] for row in self.board_gui_data])),  # noqa
-            '<b>': lambda e: print(u.strip_print([[cell.value for cell in row] for row in self.board_gui_data])),  # noqa
+            # note: unable to use shift binds
+            '<Alt-h>': lambda e: print('text containing help commands'),
+            '<Alt-d>': lambda e: debug_debug_info(),
+            '<Alt-l>': lambda e: invert_color(self.has_lock),
+            '<Alt-c>': lambda e: self.debugging_tools_change_obj_color(e, False),
+            '<Alt-b>': lambda e: print(u.strip_print([[cell.value for cell in row] for row in self.board_gui_data])),  # noqa
         }
         for k, v in key_map.items():
             self.bind(k, v)
@@ -207,7 +216,9 @@ class CanvasGUI(tk.Tk):
         empty_board = self.empty_board_button
         easy_board = self.easy_board_button
         hard_board = self.hard_board_button
-        boards = [empty_board, easy_board, hard_board]
+        random_easy = self.random_easy_board_button
+        random_hard = self.random_hard_board_button
+        boards = [empty_board, easy_board, hard_board, random_easy, random_hard]
 
 
         def convert_board():
@@ -233,24 +244,22 @@ class CanvasGUI(tk.Tk):
 
                 # if board cell was selected
                 if board.gettags(id_)[0] == 'cell':
-                    # ignore locked (loaded board) cells
                     i, j = self.board_index_lookup.get(id_)
                     if self.board_gui_data[i][j].locked:
+                        # ignore locked (loaded board) cells
                         reset_ui_state()
-                        return
-
-                    # delete cell entry
-                    if e.num == 3:
+                    elif e.num == 3 and not self.selected_cell:
+                        # delete cell entry on right click
                         self.limited_update([(i, j, 0)])
-                        c_i, c_j = self.board_index_lookup.get(id_)
-                        canvas_id = self.board_gui_data[c_i][c_j].canvas_id
+                        canvas_id = self.board_gui_data[i][j].canvas_id
                         self.play_board.itemconfigure(canvas_id, fill='#ffffff')
-                        return
-
-                    if not self.selected_cell:
+                    elif not self.selected_cell:
+                        # record cell and spawn number selector popup
                         self.selected_cell = self.board_index_lookup.get(id_)
                         self.spawn_num_selector(event)
                         self.has_lock = self.play_board
+                        # self.verify_button['state'] = tk.DISABLED
+                        # self.solve_button['state'] = tk.DISABLED
                     else:
                         reset_ui_state()
 
@@ -263,8 +272,9 @@ class CanvasGUI(tk.Tk):
                     self.limited_update([(i, j, val), ])
                     reset_ui_state()
 
-                    cb.itemconfigure(pb_obj_id, fill=self.fill[self.fill_count])
-                    self.fill_count = (self.fill_count + 1) % len(self.fill)
+                    color = self.fill[val - 1] if self.cell_colors else '#ffffff'
+                    cb.itemconfigure(pb_obj_id, fill=color)
+                    # self.fill_count = (self.fill_count + 1) % len(self.fill)
 
         # todo: refactor further ?; kept from old design
         # todo: refactor matrix import into main
@@ -276,6 +286,10 @@ class CanvasGUI(tk.Tk):
                 board = TestMatrices().matrix_01()
             elif event.widget == self.hard_board_button:
                 board = TestMatrices().matrix_11()  # hard
+            elif event.widget == self.random_easy_board_button:
+                print('generate easy board')
+            elif event.widget == self.random_hard_board_button:
+                print('generate hard board')
 
             self.update_entire_board(board)
             self.lock_and_shade_cells(board)
@@ -380,7 +394,7 @@ class CanvasGUI(tk.Tk):
                 """ place() doesn't work without arguments ??? """
                 """ even if place(*args) is called at creation """
                 self.select_board_menu_container.place(
-                    relx=.5, rely=.5, width=400, height=100, anchor=tk.CENTER)
+                    relx=.5, rely=.5, width=400, height=180, anchor=tk.CENTER)
                 self.has_lock = self.select_board_menu_container
             # ~ self.select_board_menu_container.winfo_viewable():
             elif self.select_board_menu_container == self.has_lock:
@@ -514,31 +528,26 @@ class CanvasGUI(tk.Tk):
 
         self.num_selector_popup = tk.Canvas(self.play_board)
         self.num_selector_popup.config(
-            width=width,
-            height=height,
-
-            highlightthickness=0,
-            borderwidth=border_width,
-            bg='#ffffff',
-            # relief='flat',
-        )
+            width=width, height=height,
+            bg='#ffffff', borderwidth=border_width, highlightthickness=0)
         self.num_selector_popup.place(relx=0, rely=0)
         self.num_selector_popup["state"] = tk.DISABLED
         self.num_selector_popup.place_forget()
 
         for i in range(3):
             for j in range(3):
+                num = (i * 3) + (j + 1)
+                color = self.fill[num - 1] if self.cell_colors else '#ffffff'
+                # self.fill_count = (self.fill_count + 1) % len(self.fill)
+
                 canvas_id = self.num_selector_popup.create_rectangle(
                     j * (width / 3) + border_width + rect_b_width,
                     i * (width / 3) + border_width + rect_b_width,
                     j * (width / 3) + cell_size + border_width / 3,
                     i * (width / 3) + cell_size + border_width / 3,
-                    width=rect_b_width, fill=self.fill[self.fill_count],  # fill='cyan',
-                    tags='num',
+                    width=rect_b_width, fill=color,  # fill='cyan',
+                    tags=('num', 'backdrop'),
                 )
-
-                self.fill_count = (self.fill_count + 1) % len(self.fill)
-                num = (i * 3) + (j + 1)
                 self.num_selector_lookup[canvas_id] = num
 
                 text_id = self.num_selector_popup.create_text(
@@ -622,6 +631,7 @@ class CanvasGUI(tk.Tk):
         self.select_board_menu_container = (tk.Canvas(self.play_board))
         self.select_board_menu_container.config(
             highlightthickness=2, highlightbackground='black')
+        # place cannot be used here; settings are forgotten
 
         # exclusively for button alignment  # todo: local?
         select_board_menu_backdrop = tk.Frame(self.select_board_menu_container)
@@ -631,13 +641,25 @@ class CanvasGUI(tk.Tk):
         sbmb = select_board_menu_backdrop
 
         self.empty_board_button = formatted_button(sbmb, "Empty", size)
-        self.empty_board_button.grid(row=0, column=1)
+        self.empty_board_button.grid(row=0, column=0, padx=2, pady=3)
 
         self.easy_board_button = formatted_button(sbmb, "Easy", size)
-        self.easy_board_button.grid(row=0, column=2)
+        self.easy_board_button.grid(row=0, column=1, padx=2, pady=3)
 
         self.hard_board_button = formatted_button(sbmb, "Hard", size)
-        self.hard_board_button.grid(row=0, column=3)
+        self.hard_board_button.grid(row=0, column=2, padx=2, pady=3)
+
+        # self.random_board_button = formatted_button(sbmb, "Random", size)
+        # self.random_board_button.grid(row=2, column=0)
+
+        self.random_easy_board_button = formatted_button(sbmb, "Random Easy", size)
+        self.random_easy_board_button.config(width=14, padx=6)
+        self.random_easy_board_button.grid(row=1, column=0, columnspan=2, padx=2, pady=0)
+
+        self.random_hard_board_button = formatted_button(sbmb, "Random Hard", size)
+        self.random_hard_board_button.config(width=14, padx=6)
+        self.random_hard_board_button.grid(row=2, column=1, columnspan=2, padx=2, pady=3)
+
 
     # todo: consider refactor ?
     def lock_and_shade_cells(self, shaded_cells):
@@ -647,7 +669,7 @@ class CanvasGUI(tk.Tk):
                 canvas_id = self.board_gui_data[i][j].canvas_id
                 text_id = self.board_gui_data[i][j].text_id
                 number = shaded_cells[i][j]
-                fill = 'gray77'
+                fill = '#D4D4D4'  # is 'grey83'; previous was 'gray77'
                 if number == 0:  # reset old value
                     fill = ''
                     number = ''
@@ -658,6 +680,22 @@ class CanvasGUI(tk.Tk):
                 self.play_board.itemconfigure(canvas_id, fill=fill)
                 self.play_board.itemconfigure(text_id, text=number)
                 self.play_board.lower(canvas_id)
+
+    def toggle_color(self):
+        self.cell_colors = not self.cell_colors
+
+        # recolor number selector popup
+        count = 0
+        for id_, val in self.num_selector_lookup.items():
+            tags = self.num_selector_popup.itemcget(id_, "tags")
+            if 'backdrop' not in tags:
+                continue
+            fill = '#ffffff'
+            if self.cell_colors:
+                fill = self.fill[count]
+                count += 1
+            self.num_selector_popup.itemconfigure(id_, fill=fill)
+
 
     def limited_update(self, changed_cells) -> None:
         """ changed_cells parameter of type [(i, j, value)] """
