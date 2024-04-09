@@ -105,8 +105,6 @@ class PixelGUI(tk.Tk):
             [0, 0, 0, 0, 0, 0, 0, 0, 0],
         ]
 
-        self.update_entire_board(self.welcome_message, state_change=False)
-
 
     def initialize_title(self):
         font_size = self.font_size

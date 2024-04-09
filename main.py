@@ -25,7 +25,7 @@ class SudokuApp:
         # self.fill_count = None  # todo: review
         self.gui = PixelGUI()
         # primary data structure
-        self.board_gui_data = [[CellData() for _ in range(9)] for __ in range(9)]
+        # self.board_gui_data = [[CellData() for _ in range(9)] for __ in range(9)]
 
         # order dependent  # todo: move to main
         self.gui.initialize_title()
@@ -34,14 +34,18 @@ class SudokuApp:
         self.gui.initialize_board_selector_menu()
         self.gui.initialize_num_selector_popup()
         self.bindings()
+        self.gui.update_entire_board(self.gui.welcome_message, state_change=False)
 
     def bindings(self):
-        # self.gui.bind("<Button-1>", self.gui.event_handler)
+        # todo: hold and drag Tkinter bug; have to code workaround or ignore
+        # self.gui.bind("<Button-1>", self.event_handler)
         self.gui.bind("<ButtonRelease-1>", self.event_handler)
-        # self.gui.bind("<Button-2>", self.gui.event_handler)
+        # self.gui.bind("<Button-2>", self.event_handler)
+        # self.gui.bind("<Button-3>", self.event_handler)
         self.gui.bind("<ButtonRelease-3>", self.event_handler)
         self.gui.bind("<c>", lambda e: self.gui.toggle_color())
 
+        # todo: consolidate into shder fn
         def button_enter(e):
             shade = 32
             rgb = e.widget['bg'][1:]
@@ -408,9 +412,5 @@ if __name__ == '__main__':
     BOARD_SIZE = 9
     CELL_SIZE = 50  # cell size: minimum > 25... probably
 
-    benchmarking = False
-
     app = SudokuApp()
     app.run()
-
-
