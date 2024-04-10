@@ -40,9 +40,11 @@ class SolverEngine:
         return self._find_empty_greedy(board)
 
     def hv_rule_check(self, board, i, j) -> bool:
+        """ checks (i, j) row and colum for board[i][j] value"""
         return self._hv_rule_check(board, i, j)
 
     def s_rule_check(self, board, i, j) -> bool:
+        """ checks the local 9 square grid for board[i][j] value """
         return self._s_rule_check(board, i, j)
 
     # todo: refactor
@@ -79,7 +81,7 @@ class SolverEngine:
                 break
 
             i, j = next_empty
-            for val in range(9, 0, -1):
+            for val in range(9, 0, -1):  # preserves dfs ascending search
                 curr_board[i][j] = val
                 rule_h_v = self.hv_rule_check(curr_board, i, j)
                 rule_s = self.s_rule_check(curr_board, i, j)

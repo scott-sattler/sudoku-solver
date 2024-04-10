@@ -2,6 +2,8 @@ from class_cell_data import CellData
 import tkinter as tk
 from pixel_gui import PixelGUI
 import matrix_library
+from solver_engine import SolverEngine
+from random_generator import RandomBoard
 
 
 # print('''
@@ -17,13 +19,19 @@ import matrix_library
 # build commands:
 #     pyinstaller --onefile --noconsole --name=sudoku --icon='.\sudoku.ico' main.py
 #     pyinstaller --onefile --name='sudoku_console' --icon='.\sudoku.ico' main.py
+#
 # ''')
 
 
 class SudokuApp:
+    board_width = 9
+    board_height = 9
+
     def __init__(self):
         # self.fill_count = None  # todo: review
         self.gui = PixelGUI()
+        self.se = SolverEngine()
+        self.rg = RandomBoard(self.board_width, self.board_height)
         # primary data structure
         # self.board_gui_data = [[CellData() for _ in range(9)] for __ in range(9)]
 
@@ -103,7 +111,7 @@ class SudokuApp:
             '<Alt-d>': lambda e: debug_debug_info(),
             '<Alt-l>': lambda e: invert_color(self.gui.has_lock),
             '<Alt-c>': lambda e: self.debugging_tools_change_obj_color(e, False),
-            '<Alt-b>': lambda e: print(u.strip_print([[cell.value for cell in row] for row in self.gui.board_gui_data])),  # noqa
+            '<Alt-b>': lambda e: print(u.strip_for_print([[cell.value for cell in row] for row in self.gui.board_gui_data])),  # noqa
         }
         for k, v in key_map.items():
             self.gui.bind(k, v)
@@ -187,21 +195,18 @@ class SudokuApp:
             elif event.widget == self.gui.hard_board_button:
                 board = TestMatrices().matrix_11()  # hard
             elif event.widget == self.gui.random_easy_board_button:
-                print('generate easy board')
-                board = matrix_library.steering_wheel_classic
+                board = self.rg.generate_board(45)
             elif event.widget == self.gui.random_hard_board_button:
-                print('generate hard board')
+                # board = matrix_library.steering_wheel_classic
+                board = self.rg.generate_board(40)
 
             self.gui.update_entire_board(board)
             self.gui.lock_and_shade_cells(board)
 
 
         def solve_board():
-            from solver_engine import SolverEngine
-            se = SolverEngine()
-
             board_data = convert_board()
-            generator_solver = se.solve_board(board_data)
+            generator_solver = self.se.solve_board(board_data)
 
             for next_limited_update in generator_solver:
                 if self.gui.abort:
@@ -239,8 +244,9 @@ class SudokuApp:
                 self.gui.verify_button['state'] = tk.DISABLED
 
         def verify():
-            from solver_engine import SolverEngine
-            se = SolverEngine()
+
+            from solver_engine import SolverEngine  # todo:
+            se = SolverEngine()  # todo:
 
             if se.validate_board(convert_board()):
                 self.gui.title_label.config(

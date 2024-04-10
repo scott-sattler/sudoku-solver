@@ -20,7 +20,7 @@ def rgb_hex_to_int(rgb):
     return tuple(to_ints)
 
 
-def strip_print(board):
+def strip_for_print(board):
     # ''.join(['  '.join(map(str, row)) + '\n' for row in board])
     out = list()
     for row in board:
@@ -60,7 +60,7 @@ def pretty_print(board):
 
 
 if __name__ == '__main__':
-    print(strip_print(matrix_01()))
+    print(strip_for_print(matrix_01()))
     print(pretty_print(matrix_01()))
     print(rgb_hex_to_int('#ffffff'))
     print(rgb_hex_to_int('#808080'))
