@@ -1,5 +1,6 @@
 import logging
 import os
+import warnings
 
 
 class FileIO:
@@ -51,9 +52,45 @@ class FileIO:
             return False
         return all_data
 
-
     @staticmethod
     def board_to_str(board):
+        n, m = len(board), len(board[0])
+        to_str = ['.']
+        for i in range(n):
+            for j in range(m):
+                char = str(board[i][j])
+                if char == '0':
+                    char = '.'
+                to_str.append(char)
+        to_str = ''.join(to_str)
+        return to_str
+
+    @staticmethod
+    def str_to_board(str_data) -> list[list[int]]:
+        n = m = 9  # assumes 9 by 9
+
+        str_data = str_data[1:]
+        reconstructed = list()
+        j = 0
+        row = list()
+        for char in str_data:
+            if not char.isdigit():
+                char = 0
+            char = int(char)
+            row.append(char)
+            j += 1
+            if not j < n:
+                reconstructed.append(row)
+                row = list()
+                j = 0
+
+        return reconstructed
+
+
+    @staticmethod
+    def board_to_str_old(board):
+        message = "Trying to save using incompatible file format."
+        warnings.warn(message, DeprecationWarning)
         n, m = len(board), len(board[0])
         to_str = [f'({n}, {m})']
         for i in range(n):
@@ -63,7 +100,9 @@ class FileIO:
         return to_str
 
     @staticmethod
-    def str_to_board(str_data) -> list[list[int]]:
+    def str_to_board_old(str_data) -> list[list[int]]:
+        message = "Trying to load using incompatible file format."
+        warnings.warn(message, DeprecationWarning)
         end = str_data.index(')')
         n, m = map(int, str_data[1:end].split(','))
 
