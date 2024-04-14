@@ -1,16 +1,20 @@
 import logging
 import os
 import warnings
+import random as r
 
 
 class FileIO:
-    def __init__(self, local_path='./', file_name='sudoku_save'):
-        self.path = local_path
-        self.file_name = file_name + '.txt'
+    def __init__(self, local_path='./', save_file_name='sudoku_save'):
+        self.save_path = local_path
+        self.data_path_17_hints = local_path
+        self.save_file_name = save_file_name + '.txt'
+        self.data_17_hints_file_name = '17puz49158.txt'
 
-        if self.path == './':
-            self.path = os.path.abspath(self.file_name)
-        if not os.path.isfile(self.path):
+        if local_path == './':
+            self.save_path = os.path.abspath(self.save_file_name)
+            self.data_path_17_hints = os.path.abspath(self.data_17_hints_file_name)
+        if not os.path.isfile(self.save_path):
             self.create_file()
 
         logger = logging.getLogger(__name__)
@@ -19,38 +23,56 @@ class FileIO:
 
     def create_file(self):
         try:
-            f = open(self.path, 'x')
+            f = open(self.save_path, 'x')
+            # f.write('17_hint_set: \n')  # todo: fully implement
             f.close()
-            logging.info(f'file creation successful:\n\t{self.path}')
+            logging.info(f'file creation successful:\n\t{self.save_path}')
         except (Exception,):
-            logging.warning(f'file creation failure:\n\t{self.path}')
+            logging.warning(f'file creation failure:\n\t{self.save_path}')
 
-    def write_to_file(self, write_data):
+    def write_to_save_file(self, write_data):
         try:
-            with open(self.path, 'a') as f:
+            with open(self.save_path, 'a') as f:
                 encoded = self.board_to_str(write_data) + '\n'
                 f.write(encoded)
                 f.close()
-                logging.info(f'write successful:\n\t{self.path}\n\t{encoded}')
+                logging.info(f'write successful:\n\t{self.save_path}\n\t{encoded}')
         except (Exception,) as e:
             logging.exception('write failure', stack_info=True)
             return False
         return True
 
-    def read_from_file(self):
+    def read_from_save_file(self):
         """ returns a list of boards """
         all_data = list()
         try:
-            with open(self.path, 'r') as f:
+            with open(self.save_path, 'r') as f:
                 lines = f.readlines()
                 for line in lines:
                     decoded = self.str_to_board(line)
                     all_data.append(decoded)
-                logging.info('read successful')
+                logging.info('save read successful')
         except (Exception,) as e:
-            logging.exception('read failure', stack_info=True)
+            logging.exception('save read failure', stack_info=True)
             return False
         return all_data
+
+    def read_from_17_hints_data_file(self):
+        """ returns a list of boards """
+        board_data = str()
+        random_int = r.randint(1, 49158 + 1)
+        try:
+            with open(self.data_path_17_hints, 'r') as f:
+                for i, line in enumerate(f):
+                    if i == random_int:
+                        board_data = line
+                        print(board_data)
+                        break
+            logging.info('17 hint data read successful')
+        except (Exception,) as e:
+            logging.exception('save read failure', stack_info=True)
+            return False
+        return self.str_to_board(board_data)
 
     @staticmethod
     def board_to_str(board):
@@ -121,9 +143,8 @@ class FileIO:
         return reconstructed
 
 
-
-
 if __name__ == '__main__':
+    import utilities as u
     test_data = [
         [1, 0, 0, 2, 0, 0, 3, 0, 0],
         [2, 0, 0, 3, 0, 0, 4, 0, 0],
@@ -136,7 +157,8 @@ if __name__ == '__main__':
         [0, 0, 6, 0, 0, 7, 0, 0, 8],
     ]
     io = FileIO()
-    io.write_to_file(test_data)
-    data = io.read_from_file()
-    print(data)
+    io.write_to_save_file(test_data)
+    # data = io.read_from_save_file()
+    data = io.read_from_17_hints_data_file()
+    print(u.strip_for_print(data))
 

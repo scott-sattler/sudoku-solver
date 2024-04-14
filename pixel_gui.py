@@ -17,7 +17,7 @@ class PixelGUI(tk.Tk):
     BOARD_SIZE = 9
     CELL_SIZE = 50
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, easy_clue_size, medium_clue_size, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
         self.container = tk.Frame(self)
         self.container.config(background="#ffffff")
@@ -49,12 +49,16 @@ class PixelGUI(tk.Tk):
 
         self.cell_colors = False
 
+        self.easy_clue_size = easy_clue_size
+        self.medium_clue_size = medium_clue_size
+
         self.select_board_menu_container = None
         self.empty_board_button = None
         self.easy_board_button = None
         self.hard_board_button = None
         self.random_easy_board_button = None
-        self.random_hard_board_button = None
+        self.random_medium_board_button = None
+        self.random_pick_17_board_button = None
 
         self.num_selector_popup = None
 
@@ -309,13 +313,20 @@ class PixelGUI(tk.Tk):
         # self.random_board_button = formatted_button(sbmb, "Random", size)
         # self.random_board_button.grid(row=2, column=0)
 
-        self.random_easy_board_button = formatted_button(sbmb, "Random Easy", size)
-        self.random_easy_board_button.config(width=14, padx=6)
-        self.random_easy_board_button.grid(row=1, column=0, columnspan=2, padx=2, pady=0)
+        txt_1 = f"Gen. Rand. {self.easy_clue_size} Clue"
+        self.random_easy_board_button = formatted_button(sbmb, txt_1, size)
+        self.random_easy_board_button.config(width=max(len(txt_1) + 1, 14), padx=6)
+        self.random_easy_board_button.grid(row=1, column=0, columnspan=3, padx=2, pady=0)
 
-        self.random_hard_board_button = formatted_button(sbmb, "Random Hard", size)
-        self.random_hard_board_button.config(width=14, padx=6)
-        self.random_hard_board_button.grid(row=2, column=1, columnspan=2, padx=2, pady=3)
+        txt_2 = f"Gen. Rand. {self.medium_clue_size} Clue"
+        self.random_medium_board_button = formatted_button(sbmb, txt_2, size)
+        self.random_medium_board_button.config(width=max(len(txt_2) + 1, 14), padx=6)
+        self.random_medium_board_button.grid(row=2, column=0, columnspan=3, padx=2, pady=3)
+
+        txt_3 = "Pick Rand. 17 Clue"
+        self.random_pick_17_board_button = formatted_button(sbmb, txt_3, size)
+        self.random_pick_17_board_button.config(width=max(len(txt_3) + 1, 14), padx=6)
+        self.random_pick_17_board_button.grid(row=3, column=0, columnspan=3, padx=2, pady=0)
 
 
     def lock_and_shade_cells(self, board_to_shade):

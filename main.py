@@ -4,13 +4,37 @@ from pixel_gui import PixelGUI
 import matrix_library
 from solver_engine import SolverEngine
 from random_generator import RandomBoard
+from file_io import FileIO
 
 
 # print('''
 # todo:
+#     optimize random generation
+#     ...
+#     asyncio/multiprocessing/multithreading for board generation?
+#     ...
+#     redesign difficulty adjuster
+#     remove 1 (or 2?) cells from every row/col
+#     then remove inner
+#     ...
+#     consider picking random cells and filling them
+#     ...
+#     implement previously randomly selected record
+#     revise generator to create boards with less clumping (next cell to remove algo)
 #     load/generate boards
 #     review and resolve existing todos
 #     matrix creator via input? eg 123456789<enter>2345...
+#     ...
+#     optimization fun (temporal constraints tho :( ):
+#         to (more) optimally reduce density:
+#         transform matrix into undirected graph
+#         give each node
+#             decrement method
+#                 decrement count of adjacent nodes (including diagonal?)
+#             references to diagonal neighbors (dijkstra's update analogue)
+#         heapify single pass array of nodes (binary heap implementation)
+#         using this priority queue, pop, decrement (need update?), validate
+#
 # todo (old):
 #     taskbar icon not displaying
 #     consider subclasses
@@ -27,11 +51,15 @@ class SudokuApp:
     board_width = 9
     board_height = 9
 
+    easy_clue_size = 34
+    medium_clue_size = 28
+
     def __init__(self):
         # self.fill_count = None  # todo: review
-        self.gui = PixelGUI()
+        self.gui = PixelGUI(self.easy_clue_size, self.medium_clue_size)
         self.se = SolverEngine()
         self.rg = RandomBoard(self.board_width, self.board_height)
+        self.io = FileIO()
         # primary data structure
         # self.board_gui_data = [[CellData() for _ in range(9)] for __ in range(9)]
 
@@ -125,8 +153,9 @@ class SudokuApp:
         easy_board = self.gui.easy_board_button
         hard_board = self.gui.hard_board_button
         random_easy = self.gui.random_easy_board_button
-        random_hard = self.gui.random_hard_board_button
-        boards = [empty_board, easy_board, hard_board, random_easy, random_hard]
+        random_medium = self.gui.random_medium_board_button
+        random_17 = self.gui.random_pick_17_board_button
+        boards = [empty_board, easy_board, hard_board, random_easy, random_medium, random_17]
 
 
         def convert_board():
@@ -187,6 +216,7 @@ class SudokuApp:
         # todo: refactor further ?; kept from old design
         # todo: refactor matrix import into main
         def board_selector(event):
+
             from testing.test_cases import TestMatrices
 
             board = TestMatrices().matrix_00()
@@ -195,10 +225,12 @@ class SudokuApp:
             elif event.widget == self.gui.hard_board_button:
                 board = TestMatrices().matrix_11()  # hard
             elif event.widget == self.gui.random_easy_board_button:
-                board = self.rg.generate_board(45)
-            elif event.widget == self.gui.random_hard_board_button:
+                board = self.rg.generate_board(self.easy_clue_size)
+            elif event.widget == self.gui.random_medium_board_button:
+                board = self.rg.generate_board(self.medium_clue_size)
+            elif event.widget == self.gui.random_pick_17_board_button:
                 # board = matrix_library.steering_wheel_classic
-                board = self.rg.generate_board(40)
+                board = self.io.read_from_17_hints_data_file()
 
             self.gui.update_entire_board(board)
             self.gui.lock_and_shade_cells(board)
@@ -299,8 +331,9 @@ class SudokuApp:
                     reset_ui_state()
                 """ place() doesn't work without arguments ??? """
                 """ even if place(*args) is called at creation """
+                p_rows = 4
                 self.gui.select_board_menu_container.place(
-                    relx=.5, rely=.5, width=400, height=180, anchor=tk.CENTER)
+                    relx=.5, rely=.5, width=400, height=60*p_rows, anchor=tk.CENTER)
                 self.gui.has_lock = self.gui.select_board_menu_container
             # ~ self.gui.select_board_menu_container.winfo_viewable():
             elif self.gui.select_board_menu_container == self.gui.has_lock:

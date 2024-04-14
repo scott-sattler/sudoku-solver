@@ -15,6 +15,50 @@ class RandomBoard:
             for j in range(self.n):
                 self.choices.append(str(i) + str(j))
 
+    # def generate_board_bottom_up(self, num_starting_cells):
+    #     # todo: buggy
+    #     agenda = [
+    #         [
+    #             0,                                         # count
+    #             [i for i in range(81)],                    # remaining choices
+    #             [[0 for _ in range(9)] for _ in range(9)]  # board
+    #         ]
+    #     ]
+    #     max_board = agenda[0]
+    #     while agenda:
+    #         next_node = agenda.pop()
+    #         next_count = next_node[0]
+    #         remain_cho = next_node[1]
+    #         next_board = next_node[2]
+    #
+    #         if next_count > max_board[0]:
+    #             max_board = next_node
+    #
+    #         if len(remain_cho) < 1:
+    #             # return [[-1 for _ in range(9)] for _ in range(9)]
+    #             return max_board[2]
+    #         if next_count >= num_starting_cells:
+    #             solutions = self.find_solutions(next_board)
+    #             if len(solutions) == 1:
+    #                 return next_board
+    #
+    #         rand_int = random.randint(0, len(remain_cho) - 1)
+    #         remain_cho[rand_int], remain_cho[-1] = remain_cho[-1], remain_cho[rand_int]
+    #         next_ij = remain_cho.pop()
+    #         i, j = next_ij // 9, next_ij % 9
+    #
+    #         for num in range(9):
+    #             # test validity
+    #             next_board[i][j] = num
+    #             hv = self.se.hv_rule_check(next_board, i, j)
+    #             sqr = self.se.s_rule_check(next_board, i, j)
+    #             if hv and sqr:
+    #                 agenda.append([next_count + 1, remain_cho, copy.deepcopy(next_board)])
+    #
+    #         print(u.strip_for_print(agenda[-1][-1]))
+    #
+    #     return [[-1 for _ in range(9)] for _ in range(9)]
+
     def generate_board(self, num_starting_cells, unique=True):
         valid_fill = self.generate_randomly_filled_valid_board()
         fill_copy = copy.deepcopy(valid_fill)
@@ -59,74 +103,145 @@ class RandomBoard:
                 else:  # next_i < 9:
                     agenda.append([(next_i, next_j), board_copy])
 
-    # linear time implementation
-    def adjust_difficulty_naive(self, adjust_board, starting_cells):
-        choices = copy.deepcopy(self.choices)
+    # # linear time implementation
+    # def adjust_difficulty_naive(self, adjust_board, starting_cells):
+    #     choices = copy.deepcopy(self.choices)
+    #
+    #     while len(choices) > starting_cells:
+    #         rand_ij = random.randint(0, len(choices) - 1)
+    #         choices[rand_ij], choices[-1] = choices[-1], choices[rand_ij]
+    #
+    #         choice = choices.pop()
+    #         i, j = int(choice[0]), int(choice[1])
+    #         adjust_board[i][j] = 0
+    #
+    #     return adjust_board
 
-        while len(choices) > starting_cells:
-            rand_ij = random.randint(0, len(choices) - 1)
-            choices[rand_ij], choices[-1] = choices[-1], choices[rand_ij]
+    # recursive practice
+    def most_neighbors(self, board) -> list:
+        neighbors = self._most_neighbors(board, 0, 0, set(), list())
+        cell_count = len(neighbors)
+        rows = self.get_horizontal_counts(board)
+        cols = self.get_vertical_counts(board)
+        neighbors.sort()
+        rows.sort()
+        cols.sort()
+        max_count = neighbors
+        if rows[-1][0] > max_count[-1][0]:  # ">=" prefers row/col sparsity
+            max_count = rows
+        if cols[-1][0] > max_count[-1][0]:  # ">=" prefers row/col sparsity
+            max_count = cols
+        return max_count, cell_count
 
-            choice = choices.pop()
-            i, j = int(choice[0]), int(choice[1])
-            adjust_board[i][j] = 0
+    def _most_neighbors(self, board, i, j, visited, counts):
+        # base case(s)
+        if f'{i}{j}' in visited:
+            return
+        if not 0 <= i < len(board) or not 0 <= j < len(board[0]):
+            return
 
-        return adjust_board
+        visited.add(f'{i}{j}')
+        count = 0
 
-    # lacks backtracking
+        if i - 1 >= 0 and board[i - 1][j] != 0:
+            count += 1
+        if i + 1 < len(board) and board[i + 1][j] != 0:
+            count += 1
+        if j - 1 >= 0 and board[i][j - 1] != 0:
+            count += 1
+        if j + 1 < len(board[0]) and board[i][j + 1] != 0:
+            count += 1
+
+        if i - 1 >= 0 and j - 1 >= 0 and board[i - 1][j - 1] != 0:
+            count += 1
+        if i + 1 < len(board) and j + 1 < len(board[0]) and board[i + 1][j + 1] != 0:
+            count += 1
+        if i - 1 >= 0 and j + 1 < len(board[0]) and board[i - 1][j + 1] != 0:
+            count += 1
+        if i + 1 < len(board) and j - 1 >= 0 and board[i + 1][j - 1] != 0:
+            count += 1
+
+        # nonempty count
+        if board[i][j] != 0:
+            counts.append((count, f'{i}{j}'))
+
+        self._most_neighbors(board, i - 1, j, visited, counts)
+        self._most_neighbors(board, i + 1, j, visited, counts)
+        self._most_neighbors(board, i, j - 1, visited, counts)
+        self._most_neighbors(board, i, j + 1, visited, counts)
+
+        return counts
+
+    @staticmethod
+    def get_vertical_counts(board):
+        each_col_count = list()
+        for j in range(len(board[0])):
+            col_count = [0, list()]
+            for i in range(len(board)):
+                if board[i][j] != 0:
+                    col_count[0] += 1
+                    col_count[1].append(f'{i}{j}')
+            for ij in col_count[1]:
+                each_col_count.append((col_count[0], ij))
+        # each_col_count.sort()  #(key=lambda x: -x[0])  # probably unnecessary; reverse=True
+        return each_col_count
+
+    @staticmethod
+    def get_horizontal_counts(board):
+        each_row_count = list()
+        for i in range(len(board)):
+            row_count = [0, list()]
+            for j in range(len(board[0])):
+                if board[i][j] != 0:
+                    row_count[0] += 1
+                    row_count[1].append(f'{i}{j}')
+            for ij in row_count[1]:
+                each_row_count.append((row_count[0], ij))
+        # each_row_count.sort()  #(key=lambda x: -x[0])  # probably unnecessary; reverse=True
+        return each_row_count
+
+    # lacks proper backtracking
     def adjust_difficulty(self, adjust_board, starting_cells):
-        lowest = [self.m * self.n, None]
-        searches = 0
+        board_copy = copy.deepcopy(adjust_board)
 
-        board = copy.deepcopy(adjust_board)
-        choices = copy.deepcopy(self.choices)
-        chosen = set()
-        remain = self.m * self.n
-        agenda = [[board, choices, chosen, remain]]
+        most_deep = (0, adjust_board)
+
+        agenda = [(0, board_copy)]
         while agenda:
             next_node = agenda.pop()
-            next_node = copy.deepcopy(next_node)
-            level_board = next_node[0]
-            curr_choices = next_node[1]
-            curr_chosen = next_node[2]
-            curr_remain = next_node[3]
+            removed = next_node[0]
+            next_board = next_node[1]
+            neighbor_count = self.most_neighbors(next_board)
+            if removed > most_deep[0]:
+                # print('new depth')  #  todo
+                most_deep = (removed, copy.deepcopy(next_board))
+            if neighbor_count[1] < starting_cells:
+                return next_board
+            sorted_count = neighbor_count[0]
+            max_neighbors = sorted_count[-1][0]
+            i = neighbor_count[1] - 1
+            while i > -1 and sorted_count[i][0] == max_neighbors:
+                i -= 1
 
-            # failed path
-            if (curr_remain - len(curr_choices)) > starting_cells:
-                continue
+            most_neighbors = sorted_count[i + 1:]
+            random.shuffle(most_neighbors)
+            for cells in most_neighbors:
+                # rand_ij = random.randint(0, len(most_neighbors) - 1)
+                # ij = most_neighbors[rand_ij][1]
+                # i, j = int(ij[0]), int(ij[1])
+                ij = cells[1]
+                i, j = int(ij[0]), int(ij[1])
 
-            if curr_remain <= starting_cells:
-                return level_board
-
-            branches = curr_choices
-            while len(branches) > 0:
-                level_choices = copy.deepcopy(curr_choices)
-                level_chosen = copy.deepcopy(curr_chosen)
-                level_remain = curr_remain
-
-                rand_ij = random.randint(0, len(level_choices) - 1)
-                branches[rand_ij], branches[-1] = branches[-1], branches[rand_ij]
-                branches.pop()
-
-                level_choices[rand_ij], level_choices[-1] = level_choices[-1], level_choices[rand_ij]
-                choice = level_choices.pop()
-
-                level_chosen.add(choice)
-                i, j = int(choice[0]), int(choice[1])
-                branch_board = copy.deepcopy(level_board)
+                branch_board = copy.deepcopy(next_board)
                 branch_board[i][j] = 0
-
                 solutions = self.find_solutions(branch_board)
-                searches += 1
                 if len(solutions) < 2:
-                    level_remain -= 1
-                    agenda.append([branch_board, level_choices, level_chosen, level_remain])
+                    # print(u.strip_for_print(branch_board))
+                    agenda.append((removed + 1, branch_board))
+            # print('maximum depth:', most_deep[0]) #  todo
 
-                    if level_remain < lowest[0]:
-                        lowest = [level_remain, copy.deepcopy(branch_board)]
-
-        return lowest[1]
-
+        print('maximum depth reached', most_deep[0])
+        return most_deep[1]
 
     @staticmethod
     def find_empty(board) -> tuple[int, int] | None:
@@ -150,9 +265,10 @@ class RandomBoard:
             next_empty = self.find_empty(next_board)
 
             if not next_empty:
+                valid_boards.append(next_board)
                 if stop_at_two and len(valid_boards) > 1:
                     return valid_boards
-                valid_boards.append(next_board)
+                # valid_boards.append(next_board)
                 continue
 
             i, j = next_empty
@@ -166,3 +282,27 @@ class RandomBoard:
                     agenda.append(copy.deepcopy(next_board))
 
         return valid_boards
+
+
+if __name__ == '__main__':
+    import utilities as u
+
+    test_m = u.matrix_01()
+    rg = RandomBoard(9, 9)
+    # foo = rg.most_neighbors(test_m)
+    # print(foo)
+    # foo.sort()
+    # print(foo)
+
+    # rand_board = rg.generate_randomly_filled_valid_board()
+    # adjusted = rg.adjust_difficulty(rand_board, 40)
+    # print(u.strip_for_print(adjusted))
+
+    # board = rg.generate_board(17)
+    # print(u.strip_for_print(board))
+
+    # board = rg.generate_board(34)
+    # print(u.strip_for_print(board))
+
+    board = rg.generate_board(28)
+    print(u.strip_for_print(board))
