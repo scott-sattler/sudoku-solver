@@ -9,6 +9,11 @@ from file_io import FileIO
 
 # print('''
 # todo:
+#     bug?: solver indicating some loaded 17 clue boards are invalid?
+#     ...
+#     implement previously randomly selected record
+#     some sort of save system... scores, etc. ?
+#     ...
 #     optimize random generation
 #     ...
 #     asyncio/multiprocessing/multithreading for board generation?
@@ -19,7 +24,6 @@ from file_io import FileIO
 #     ...
 #     consider picking random cells and filling them
 #     ...
-#     implement previously randomly selected record
 #     revise generator to create boards with less clumping (next cell to remove algo)
 #     load/generate boards
 #     review and resolve existing todos
