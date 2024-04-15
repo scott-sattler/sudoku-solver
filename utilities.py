@@ -61,7 +61,7 @@ def pretty_print(board):
 
 def board_to_str(board):
     n, m = len(board), len(board[0])
-    to_str = ['.']
+    to_str = list()
     for i in range(n):
         for j in range(m):
             char = str(board[i][j])

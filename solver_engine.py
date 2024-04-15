@@ -226,3 +226,24 @@ class SolverEngine:
                 if sqr_board_val == board_val:
                     return False
         return True
+
+
+if __name__ == '__main__':
+    import utilities as u
+    se = SolverEngine()
+    test_data = [
+        [1, 0, 0, 2, 0, 0, 3, 0, 0],
+        [2, 0, 0, 3, 0, 0, 4, 0, 0],
+        [3, 0, 0, 4, 0, 0, 5, 0, 0],
+        [4, 0, 0, 5, 0, 0, 6, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 3, 0, 0, 4, 0, 0, 5],
+        [0, 0, 4, 0, 0, 5, 0, 0, 6],
+        [0, 0, 5, 0, 0, 6, 0, 0, 7],
+        [0, 0, 6, 0, 0, 7, 0, 0, 8],
+    ]
+    test_data_str = '........1.......2...3..4........13...2.....5.61...........6......425......7...4.8'
+    test_board = u.str_to_board(test_data_str)
+    print(test_board)
+    test_result = se.validate_board(test_board)
+    print(test_result)

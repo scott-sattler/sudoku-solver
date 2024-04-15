@@ -1,11 +1,10 @@
 import logging
 import os
-import sys
-import warnings
 import random as r
 
 
 class FileIO:
+    """ non-data line prefix '_' """
     DATA_FILE_NAME = '17puz49158.txt'
 
     def __init__(self, local_save_path='./', save_file_name='sudoku_save'):
@@ -28,19 +27,20 @@ class FileIO:
     def create_file(self):
         try:
             f = open(self.save_path, 'x')
-            # f.write('17_hint_set: \n')  # todo: fully implement
+            # f.write('_17_hint_set: \n')  # todo: fully implement
             f.close()
             logging.info(f'file creation successful:\n\t{self.save_path}')
         except (Exception,):
             logging.warning(f'file creation failure:\n\t{self.save_path}')
 
-    def write_to_save_file(self, write_data):
+    def write_board_to_save_file(self, board_data):
         try:
             with open(self.save_path, 'a') as f:
-                encoded = self.board_to_str(write_data) + '\n'
-                f.write(encoded)
+                encoded = self.convert_to_formatted_str(board_data)
+                line = encoded + '\n'
+                f.write(line)
                 f.close()
-                logging.info(f'write successful:\n\t{self.save_path}\n\t{encoded.rstrip()[1:]}')
+                logging.info(f'write successful:\n\t{self.save_path}\n\t{encoded}')
         except (Exception,) as e:
             logging.exception('write failure', stack_info=True)
             return False
@@ -53,7 +53,10 @@ class FileIO:
             with open(self.save_path, 'r') as f:
                 lines = f.readlines()
                 for line in lines:
-                    decoded = self.str_to_board(line)
+                    if line and line[0] == '_':
+                        continue
+                    stripped_suffix = line.rstrip("\n\r")
+                    decoded = self.convert_from_formatted_str(stripped_suffix)
                     all_data.append(decoded)
                 logging.info('save read successful')
         except (Exception,) as e:
@@ -63,24 +66,31 @@ class FileIO:
 
     def read_from_17_hints_data_file(self):
         """ returns a list of boards """
-        board_data = str()
+        board_save_data = str()
         random_int = r.randint(1, 49158 + 1)
         try:
             with open(self.data_path_17_hints, 'r') as f:
                 for i, line in enumerate(f):
                     if i == random_int:
-                        board_data = line
+                        board_save_data = line.rstrip("\n\r")
                         break
-            logging.info(f'17 clue data read successful:\n\t{board_data.rstrip()}')
+            logging.info(f'17 clue data read successful:\n\t{board_save_data}')
         except (Exception,) as e:
             logging.exception('save read failure', stack_info=True)
             return False
-        return self.str_to_board(board_data)
+        return self.convert_from_formatted_str(board_save_data)
+
+    def convert_to_formatted_str(self, board_to_convert):
+        return self._board_to_str(board_to_convert)
+
+    def convert_from_formatted_str(self, save_data):
+        return self._str_to_board(save_data)
 
     @staticmethod
-    def board_to_str(board):
+    def _board_to_str(board):
+        """ converts from array format to string format """
         n, m = len(board), len(board[0])
-        to_str = ['.']
+        to_str = list()
         for i in range(n):
             for j in range(m):
                 char = str(board[i][j])
@@ -91,10 +101,10 @@ class FileIO:
         return to_str
 
     @staticmethod
-    def str_to_board(str_data) -> list[list[int]]:
+    def _str_to_board(str_data) -> list[list[int]]:
+        """ converts from string format to array format """
         n = m = 9  # assumes 9 by 9
 
-        str_data = str_data[1:]
         reconstructed = list()
         j = 0
         row = list()
@@ -112,40 +122,6 @@ class FileIO:
         return reconstructed
 
 
-    @staticmethod
-    def board_to_str_old(board):
-        message = "Trying to save using incompatible file format."
-        warnings.warn(message, DeprecationWarning)
-        n, m = len(board), len(board[0])
-        to_str = [f'({n}, {m})']
-        for i in range(n):
-            for j in range(m):
-                to_str.append(str(board[i][j]))
-        to_str = ' '.join(to_str)
-        return to_str
-
-    @staticmethod
-    def str_to_board_old(str_data) -> list[list[int]]:
-        message = "Trying to load using incompatible file format."
-        warnings.warn(message, DeprecationWarning)
-        end = str_data.index(')')
-        n, m = map(int, str_data[1:end].split(','))
-
-        str_data = str_data[7:]
-        reconstructed = list()
-        i = 0
-        while i < len(str_data):
-            j, row = 0, list()
-            while i < len(str_data) and j < m:
-                if str_data[i].isdigit():
-                    row.append(int(str_data[i]))
-                    j += 1
-                i += 1
-            if i < len(str_data):
-                reconstructed.append(row)
-        return reconstructed
-
-
 if __name__ == '__main__':
     import utilities as u
     test_data = [
@@ -160,8 +136,11 @@ if __name__ == '__main__':
         [0, 0, 6, 0, 0, 7, 0, 0, 8],
     ]
     io = FileIO()
-    io.write_to_save_file(test_data)
+    # io.write_to_save_file(test_data)
     # data = io.read_from_save_file()
     data = io.read_from_17_hints_data_file()
-    print(u.strip_for_print(data))
+    io.write_board_to_save_file(data)
+    test_convert = io.read_from_save_file()
+    # print(io._board_to_str(test_convert))
+    # print(u.strip_for_print(test_convert))
 

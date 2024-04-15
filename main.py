@@ -10,23 +10,19 @@ from file_io import FileIO
 
 # print('''
 # todo:
-#     bug?: solver indicating some loaded 17 clue boards are invalid?
+#     ! address 40 clue min edge case
+#     consider adding valid transformations (for previously selected boards?)
 #     ...
-#     implement previously randomly selected record
+#     implement previously randomly selected record (currently in logs)
 #     some sort of save system... scores, etc. ?
 #     ...
-#     optimize random generation
+#     optimize random generation; probably require redesign using dancing links
 #     ...
 #     asyncio/multiprocessing/multithreading for board generation?
-#     ...
-#     redesign difficulty adjuster
-#     remove 1 (or 2?) cells from every row/col
-#     then remove inner
+#     spawn multiple threads for multiple boards? worse min, better worst case
 #     ...
 #     consider picking random cells and filling them
 #     ...
-#     revise generator to create boards with less clumping (next cell to remove algo)
-#     load/generate boards
 #     review and resolve existing todos
 #     matrix creator via input? eg 123456789<enter>2345...
 #     ...
@@ -237,11 +233,11 @@ class SudokuApp:
                 board = TestMatrices().matrix_11()  # hard
             elif event.widget == self.gui.random_easy_board_button:
                 board = self.rg.generate_board(self.easy_clue_size)
-                str_b = self.io.board_to_str(board)[1:]
+                str_b = self.io._board_to_str(board)
                 logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
             elif event.widget == self.gui.random_medium_board_button:
                 board = self.rg.generate_board(self.medium_clue_size)
-                str_b = self.io.board_to_str(board)[1:]
+                str_b = self.io._board_to_str(board)
                 logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
             elif event.widget == self.gui.random_pick_17_board_button:
                 # board = matrix_library.steering_wheel_classic
