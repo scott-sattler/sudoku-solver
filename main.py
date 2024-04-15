@@ -241,12 +241,10 @@ class SudokuApp:
                 logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
             elif event.widget == self.gui.random_pick_17_board_button:
                 # board = matrix_library.steering_wheel_classic
-                board = self.io.read_from_17_hints_data_file()
-
+                board = self.io.read_and_load_board_from_17_hints_data_file()
 
             self.gui.update_entire_board(board)
             self.gui.lock_and_shade_cells(board)
-
 
         def solve_board():
             board_data = convert_board()

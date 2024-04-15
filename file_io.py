@@ -46,7 +46,7 @@ class FileIO:
             return False
         return True
 
-    def read_from_save_file(self):
+    def read_and_load_all_boards_from_save_file(self):
         """ returns a list of boards """
         all_data = list()
         try:
@@ -64,7 +64,7 @@ class FileIO:
             return False
         return all_data
 
-    def read_from_17_hints_data_file(self):
+    def read_and_load_board_from_17_hints_data_file(self):
         """ returns a list of boards """
         board_save_data = str()
         random_int = r.randint(1, 49158 + 1)
@@ -138,9 +138,9 @@ if __name__ == '__main__':
     io = FileIO()
     # io.write_to_save_file(test_data)
     # data = io.read_from_save_file()
-    data = io.read_from_17_hints_data_file()
+    data = io.read_and_load_board_from_17_hints_data_file()
     io.write_board_to_save_file(data)
-    test_convert = io.read_from_save_file()
+    test_convert = io.read_and_load_all_boards_from_save_file()
     # print(io._board_to_str(test_convert))
     # print(u.strip_for_print(test_convert))
 
