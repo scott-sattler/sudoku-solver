@@ -261,22 +261,8 @@ if __name__ == '__main__':
     # t_adjusted = rg.adjust_difficulty(rand__t_board, 40)
     # print(u.strip_for_print(t_adjusted))
 
-    # t_board = rg.generate_board(17)
-    # print(u.strip_for_print(t_board))
-    #
-    # t_board = rg.generate_board(34)
-    # print(u.strip_for_print(t_board))
-    #
-    # t_board = rg.generate_board(28)
-    # print(u.strip_for_print(t_board))
-
-    # import cProfile
-    # cProfile.run('rg.generate_board(34)')
-
-
     import cProfile
     import pstats
-
 
     profiler = cProfile.Profile()
     profiler.enable()
