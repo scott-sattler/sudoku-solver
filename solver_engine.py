@@ -15,8 +15,6 @@ fully optimized:
 
 '''
 
-# todo: search in columns and pick most constrained cells
-# todo: both optimal and looks way cooler
 
 class NeedsName:
     """ create a valid set for every row, column, and square """
@@ -41,7 +39,7 @@ class SolverEngine:
 
     def hv_rule_check(self, board, i, j) -> bool:
         """ checks (i, j) row and colum for board[i][j] value"""
-        return self._hv_rule_check(board, i, j)
+        return self._hv_rule_check_fast(board, i, j)
 
     def s_rule_check(self, board, i, j) -> bool:
         """ checks the local 9 square grid for board[i][j] value """
@@ -61,7 +59,6 @@ class SolverEngine:
 
     def solve_board(self, board_data):
         return self._solve_board(board_data)
-
 
 
     ###########################################################################
@@ -200,6 +197,16 @@ class SolverEngine:
             if (i, var_ij) != (i, j) and board[i][var_ij] == board_val:
                 return False
             if (var_ij, j) != (i, j) and board[var_ij][j] == board_val:
+                return False
+        return True
+
+    @staticmethod
+    def _hv_rule_check_fast(board, i, j):
+        board_val = board[i][j]
+        for e in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
+            if board[e][j] == board_val and (i, j) != (e, j):
+                return False
+            if board[i][e] == board_val and (i, j) != (i, e):
                 return False
         return True
 

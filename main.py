@@ -1,3 +1,4 @@
+import logging
 from class_cell_data import CellData
 import tkinter as tk
 from pixel_gui import PixelGUI
@@ -58,7 +59,14 @@ class SudokuApp:
     easy_clue_size = 34
     medium_clue_size = 28
 
+    # # logger = logging.getLogger(__name__)
+    # logging.basicConfig(filename='main_log.log', encoding='utf-8', level=logging.DEBUG)
+    # logging.getLogger()
+
     def __init__(self):
+        logging.getLogger()
+        logging.basicConfig(filename='logs.log', encoding='utf-8', level=logging.DEBUG)
+
         # self.fill_count = None  # todo: review
         self.gui = PixelGUI(self.easy_clue_size, self.medium_clue_size)
         self.se = SolverEngine()
@@ -230,11 +238,16 @@ class SudokuApp:
                 board = TestMatrices().matrix_11()  # hard
             elif event.widget == self.gui.random_easy_board_button:
                 board = self.rg.generate_board(self.easy_clue_size)
+                str_b = self.io.board_to_str(board)[1:]
+                logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
             elif event.widget == self.gui.random_medium_board_button:
                 board = self.rg.generate_board(self.medium_clue_size)
+                str_b = self.io.board_to_str(board)[1:]
+                logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
             elif event.widget == self.gui.random_pick_17_board_button:
                 # board = matrix_library.steering_wheel_classic
                 board = self.io.read_from_17_hints_data_file()
+
 
             self.gui.update_entire_board(board)
             self.gui.lock_and_shade_cells(board)

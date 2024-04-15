@@ -21,7 +21,8 @@ class FileIO:
         self.data_path_17_hints = os.path.abspath(rel_path)
 
         # logger = logging.getLogger(__name__)
-        logging.basicConfig(filename='io_log.log', encoding='utf-8', level=logging.DEBUG)
+        logging.getLogger()
+        logging.basicConfig(filename='logs.log', encoding='utf-8', level=logging.DEBUG)
         # logger.debug .info .warning .error
 
     def create_file(self):
@@ -39,7 +40,7 @@ class FileIO:
                 encoded = self.board_to_str(write_data) + '\n'
                 f.write(encoded)
                 f.close()
-                logging.info(f'write successful:\n\t{self.save_path}\n\t{encoded}')
+                logging.info(f'write successful:\n\t{self.save_path}\n\t{encoded.rstrip()[1:]}')
         except (Exception,) as e:
             logging.exception('write failure', stack_info=True)
             return False
@@ -70,7 +71,7 @@ class FileIO:
                     if i == random_int:
                         board_data = line
                         break
-            logging.info(f'17 clue data read successful\n{board_data}')
+            logging.info(f'17 clue data read successful:\n\t{board_data.rstrip()}')
         except (Exception,) as e:
             logging.exception('save read failure', stack_info=True)
             return False
