@@ -165,7 +165,7 @@ class SolverEngine:
                 if len(possible_moves[i][j]) < len(min_cell[0]):
                     min_cell = (possible_moves[i][j], (i, j))
 
-        return min_cell[1]  # todo
+        return min_cell[1]  # [0], min_cell[1][1]  # todo
 
     # correctness/naive/brute force implementation
     @staticmethod
@@ -195,9 +195,6 @@ class SolverEngine:
     @staticmethod
     def _hv_rule_check(board, i, j) -> bool:
         """ checks (i, j) row and colum for board[i][j] value"""
-        if len(board) != len(board[0]):  # todo move
-            raise ValueError('Rectangular boards are unsupported.')
-
         board_val = board[i][j]
         for var_ij in range(len(board)):
             if (i, var_ij) != (i, j) and board[i][var_ij] == board_val:
@@ -210,9 +207,6 @@ class SolverEngine:
     @staticmethod
     def _s_rule_check(board, i, j) -> bool:
         """ checks the local 9 square grid for board[i][j] value """
-        if len(board) != len(board[0]):  # todo move
-            raise ValueError('Rectangular boards are unsupported.')
-
         # get top left corner of each 3x3 square
         i_0 = i - (i % 3)
         j_0 = j - (j % 3)
