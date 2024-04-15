@@ -45,8 +45,8 @@ from file_io import FileIO
 #     http://stackoverflow.com/questions/17056211/python-tkinter-option-menu
 #
 # build commands:
-#     pyinstaller --onefile --noconsole --name=sudoku --icon='.\sudoku.ico' main.py
-#     pyinstaller --onefile --name='sudoku_console' --icon='.\sudoku.ico' main.py
+#     pyinstaller --onefile --noconsole --name=sudoku --add-data="17puz49158.txt;." --icon='.\sudoku.ico' main.py
+#     pyinstaller --onefile --name='sudoku_console' --add-data="17puz49158.txt;." --icon='.\sudoku.ico' main.py
 #
 # ''')
 

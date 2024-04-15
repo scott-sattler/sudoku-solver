@@ -1,23 +1,26 @@
 import logging
 import os
+import sys
 import warnings
 import random as r
 
 
 class FileIO:
-    def __init__(self, local_path='./', save_file_name='sudoku_save'):
-        self.save_path = local_path
-        self.data_path_17_hints = local_path
-        self.save_file_name = save_file_name + '.txt'
-        self.data_17_hints_file_name = '17puz49158.txt'
+    DATA_FILE_NAME = '17puz49158.txt'
 
-        if local_path == './':
+    def __init__(self, local_save_path='./', save_file_name='sudoku_save'):
+        self.save_path = local_save_path
+        self.save_file_name = save_file_name + '.txt'
+        if local_save_path == './':
             self.save_path = os.path.abspath(self.save_file_name)
-            self.data_path_17_hints = os.path.abspath(self.data_17_hints_file_name)
         if not os.path.isfile(self.save_path):
             self.create_file()
 
-        logger = logging.getLogger(__name__)
+        """ Pyinstaller unpacks .exe into TEMP directory _MEIPASS """
+        rel_path = os.path.join(os.path.dirname(__file__), self.DATA_FILE_NAME)
+        self.data_path_17_hints = os.path.abspath(rel_path)
+
+        # logger = logging.getLogger(__name__)
         logging.basicConfig(filename='io_log.log', encoding='utf-8', level=logging.DEBUG)
         # logger.debug .info .warning .error
 
@@ -66,9 +69,8 @@ class FileIO:
                 for i, line in enumerate(f):
                     if i == random_int:
                         board_data = line
-                        print(board_data)
                         break
-            logging.info('17 hint data read successful')
+            logging.info(f'17 clue data read successful\n{board_data}')
         except (Exception,) as e:
             logging.exception('save read failure', stack_info=True)
             return False
