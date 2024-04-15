@@ -228,7 +228,6 @@ class SudokuApp:
         # todo: refactor further ?; kept from old design
         # todo: refactor matrix import into main
         def board_selector(event):
-
             from testing.test_cases import TestMatrices
 
             board = TestMatrices().matrix_00()
