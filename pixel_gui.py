@@ -47,6 +47,10 @@ class PixelGUI(tk.Tk):
         self.select_button = None
         self.verify_button = None
 
+        self.notes_panel_container = None
+        self.note_buttons = dict()
+
+
         self.cell_colors = False
 
         self.easy_clue_size = easy_clue_size
@@ -328,6 +332,34 @@ class PixelGUI(tk.Tk):
         self.random_pick_17_board_button.config(width=max(len(txt_3) + 1, 14), padx=6)
         self.random_pick_17_board_button.grid(row=3, column=0, columnspan=3, padx=2, pady=0)
 
+
+    def initialize_notes_panel(self):
+        """ these buttons MAY? differ from board select menu buttons """  # todo
+        def formatted_button(master, text, f_scale):
+            font_size = int(self.font_size * f_scale)
+            button = tk.Label(master)
+            button.config(text=text, anchor=tk.CENTER)
+            button.config(bg='#ffffff', borderwidth=2, relief='solid')
+            button.config(width=2, padx=0)
+            button.config(font=(self.board_font, font_size))
+            return button
+
+        self.notes_panel_container = tk.Canvas(self.container)
+        npc = self.notes_panel_container
+        npc.config(
+            bg='#f0ff0f', highlightthickness=2, highlightbackground='black',
+        )
+        npc.grid_rowconfigure(0, weight=1)
+        npc.grid_rowconfigure(2, weight=1)
+        npc.grid_columnconfigure(0, weight=1)
+        npc.grid_columnconfigure(10, weight=1)
+
+        for i in range(1, 10):
+            temp_button = formatted_button(npc, f'{i}', 1)
+            temp_button.grid(row=1, column=i, rowspan=1, columnspan=1, sticky='')
+            self.note_buttons[i] = temp_button
+
+        self.notes_panel_container.place(relx=.5, rely=.94, width=490, height=60, anchor=tk.CENTER)  # todo: move
 
     def lock_and_shade_cells(self, board_to_shade):
         """ locks and colors cells dark """

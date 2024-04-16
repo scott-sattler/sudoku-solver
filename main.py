@@ -10,6 +10,9 @@ from file_io import FileIO
 
 # print('''
 # todo:
+#     solver was mostly to look cool, but is a bit slow on fixed 17 boards
+#     consider precomputing valid moves (would preserve coolness of current solution)
+#     ...
 #     ! address 40 clue min edge case
 #     consider adding valid transformations (for previously selected boards?)
 #     ...
@@ -63,15 +66,12 @@ class SudokuApp:
         logging.getLogger()
         logging.basicConfig(filename='logs.log', encoding='utf-8', level=logging.DEBUG)
 
-        # self.fill_count = None  # todo: review
         self.gui = PixelGUI(self.easy_clue_size, self.medium_clue_size)
         self.se = SolverEngine()
         self.rg = RandomBoard(self.board_width, self.board_height)
         self.io = FileIO()
-        # primary data structure
-        # self.board_gui_data = [[CellData() for _ in range(9)] for __ in range(9)]
 
-        # order dependent  # todo: move to main
+        # order dependent
         self.gui.initialize_title()
         self.gui.initialize_play_board()
         self.gui.initialize_control_board()
@@ -79,6 +79,7 @@ class SudokuApp:
         self.gui.initialize_num_selector_popup()
         self.bindings()
         self.gui.update_entire_board(self.gui.welcome_message, state_change=False)
+        # self.gui.initialize_notes_panel()
 
     def bindings(self):
         # todo: hold and drag Tkinter bug; have to code workaround or ignore
@@ -232,11 +233,11 @@ class SudokuApp:
             elif event.widget == self.gui.hard_board_button:
                 board = TestMatrices().matrix_11()  # hard
             elif event.widget == self.gui.random_easy_board_button:
-                board = self.rg.generate_board(self.easy_clue_size)
+                board = self.rg.generate_board(self.easy_clue_size, sec=3)
                 str_b = self.io._board_to_str(board)
                 logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
             elif event.widget == self.gui.random_medium_board_button:
-                board = self.rg.generate_board(self.medium_clue_size)
+                board = self.rg.generate_board(self.medium_clue_size, sec=3)
                 str_b = self.io._board_to_str(board)
                 logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
             elif event.widget == self.gui.random_pick_17_board_button:

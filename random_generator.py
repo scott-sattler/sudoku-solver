@@ -1,6 +1,6 @@
 import random
 import solver_engine
-
+import time as t
 
 
 class RandomBoard:
@@ -10,10 +10,12 @@ class RandomBoard:
         self.n = board_height
         self.se = solver_engine.SolverEngine()
 
-    def generate_board(self, num_starting_cells, unique=True):
-        valid_fill = self.generate_randomly_filled_valid_board()
-        fill_copy = self.manual_copy_fast(valid_fill)
-        adjusted = self.adjust_difficulty(fill_copy, num_starting_cells)
+    def generate_board(self, num_starting_cells, sec):
+        adjusted = None
+        while not adjusted:
+            valid_fill = self.generate_randomly_filled_valid_board()
+            fill_copy = self.manual_copy_fast(valid_fill)
+            adjusted = self.adjust_difficulty(fill_copy, num_starting_cells, sec=sec)
         return adjusted
 
     def generate_randomly_filled_valid_board(self):
@@ -54,27 +56,17 @@ class RandomBoard:
                 else:  # next_i < 9:
                     agenda.append([(next_i, next_j), board_copy])
 
-    # @staticmethod
-    # def manual_copy(board):
-    #     copied_board = list()
-    #     for each_row in board:
-    #         new_row = list()
-    #         for val in each_row:
-    #             new_row.append(val)
-    #         copied_board.append(new_row)
-    #     return copied_board
-
-    @staticmethod
-    def manual_copy_fast(board):
-        return [row[:] for row in board]
-
     # NOTE: limited backtracking
-    def adjust_difficulty(self, adjust_board, starting_cells):
+    def adjust_difficulty(self, adjust_board, starting_cells, sec=0):
+        t_0 = t.time()
+
         board_copy = self.manual_copy_fast(adjust_board)
 
-        best_found = (0, adjust_board)
+        # best_found = (0, adjust_board)  # todo
         agenda = [(0, board_copy)]
         while agenda:
+            if sec > 0 and t.time() > t_0 + sec:
+                return None
             next_node = agenda.pop()
             removed = next_node[0]
             curr_board = next_node[1]
@@ -99,7 +91,6 @@ class RandomBoard:
             for cells in most_neighbors:
                 i, j = int(cells[1][0]), int(cells[1][1])
 
-                # next_board = copy.deepcopy(curr_board)  # todo: review
                 next_board = self.manual_copy_fast(curr_board)
                 next_board[i][j] = 0
                 # prune invalid branches
@@ -165,6 +156,10 @@ class RandomBoard:
         self._get_neighbor_count(board, i, j + 1, visited, counts)
 
         return counts
+
+    @staticmethod
+    def manual_copy_fast(board):
+        return [row[:] for row in board]
 
     @staticmethod
     def get_vertical_counts(board):
