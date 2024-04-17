@@ -16,6 +16,11 @@ with open(ICON_PATH, 'wb') as icon_file:
 class PixelGUI(tk.Tk):
     BOARD_SIZE = 9
     CELL_SIZE = 50
+    LOCKED_CELL_FILL_COLOR = '#EEEEEE'
+    NOTE_COLOR = '#808080'
+    BUTTON_COLOR = '#ffffff'
+    BUTTON_HOVER_COLOR = '#dfdfdf'
+    # SELECT_HIGHLIGHT_COLOR = '#D3D3D3'  # todo: unimplemented
 
     def __init__(self, easy_clue_size, medium_clue_size, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
@@ -48,8 +53,7 @@ class PixelGUI(tk.Tk):
         self.verify_button = None
 
         self.notes_panel_container = None
-        self.note_buttons = dict()
-
+        self.note_buttons = None  # todo
 
         self.cell_colors = False
 
@@ -77,8 +81,8 @@ class PixelGUI(tk.Tk):
 
         self.validation_message = None
 
-        self.board_index_lookup = dict()
-        self.num_selector_lookup = dict()
+        self.board_index_lookup = dict()  # lookup from tk id
+        self.num_selector_lookup = dict()  # lookup from tk id
 
         """ primary data structure """
         self.board_gui_data = [[CellData() for _ in range(9)] for __ in range(9)]
@@ -196,9 +200,29 @@ class PixelGUI(tk.Tk):
                     tags="cell",
                 )
 
+                note_ids = ['one-indexed']
+                mid_i = (cell_size / 2 + (j * cell_size) + 4)
+                mid_j = (cell_size / 2 + (i * cell_size) + 4)
+                for p in range(3):
+                    for q in range(3):
+                        note_id = self.play_board.create_text(
+                            mid_i - 14 + (q * 14),
+                            mid_j - 14 + (p * 14),
+                            font=(self.board_font, 8),
+                            text=f'{(3 * p) + q + 1}',
+                            tags='note',
+                            anchor=tk.CENTER,
+                            fill=self.NOTE_COLOR,  # '#808080'  # 'grey'
+                        )
+                        note_ids.append(note_id)
+
                 self.play_board.lower(canvas_id)
                 self.board_gui_data[i][j].canvas_id = canvas_id
                 self.board_gui_data[i][j].text_id = txt_id
+                self.board_gui_data[i][j].note_ids = note_ids
+                for id_ in note_ids:
+                    self.play_board.itemconfig(id_, state=tk.HIDDEN)
+                    self.board_index_lookup[id_] = (i, j)
 
                 self.board_index_lookup[txt_id] = (i, j)
                 self.board_index_lookup[canvas_id] = (i, j)
@@ -246,11 +270,12 @@ class PixelGUI(tk.Tk):
         """ these buttons differ from board select menu buttons """
         def formatted_button(master, text, f_scale):
             font_size = int(self.font_size * f_scale)
+            button_color = self.BUTTON_COLOR
             button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
-            button.config(bg='#ffffff', borderwidth=0)
-            button.config(width=8)
             button.config(font=(self.board_font, font_size))
+            button.config(bg=button_color, borderwidth=0)
+            button.config(width=8)
             return button
 
         # note: Canvas has useful options and functionality versus Frame
@@ -283,11 +308,12 @@ class PixelGUI(tk.Tk):
             """ labels necessary due to tk limitations """
             """ functionally most similar to buttons """
             font_size = int(self.font_size * f_scale)
+            button_color = self.BUTTON_COLOR
             button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
-            button.config(bg='#ffffff', relief='sunken', borderwidth=0)
-            button.config(highlightbackground='black', highlightthickness=2)
             button.config(font=(self.board_font, font_size))
+            button.config(bg=button_color, relief='sunken', borderwidth=0)
+            button.config(highlightbackground='black', highlightthickness=2)
             button.config(height=1, width=7)  # width in chars
             button.config(pady=8)
             return button
@@ -337,29 +363,27 @@ class PixelGUI(tk.Tk):
         """ these buttons MAY? differ from board select menu buttons """  # todo
         def formatted_button(master, text, f_scale):
             font_size = int(self.font_size * f_scale)
+            button_color = self.BUTTON_COLOR
             button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
-            button.config(bg='#ffffff', borderwidth=2, relief='solid')
+            button.config(bg=button_color, borderwidth=2, relief='solid')
             button.config(width=2, padx=0)
             button.config(font=(self.board_font, font_size))
             return button
 
         self.notes_panel_container = tk.Canvas(self.container)
         npc = self.notes_panel_container
-        npc.config(
-            bg='#f0ff0f', highlightthickness=2, highlightbackground='black',
-        )
+        npc.config(bg='#ffffff', highlightthickness=0)
         npc.grid_rowconfigure(0, weight=1)
         npc.grid_rowconfigure(2, weight=1)
         npc.grid_columnconfigure(0, weight=1)
         npc.grid_columnconfigure(10, weight=1)
 
+        self.note_buttons = ['one-indexed']
         for i in range(1, 10):
             temp_button = formatted_button(npc, f'{i}', 1)
             temp_button.grid(row=1, column=i, rowspan=1, columnspan=1, sticky='')
-            self.note_buttons[i] = temp_button
-
-        self.notes_panel_container.place(relx=.5, rely=.94, width=490, height=60, anchor=tk.CENTER)  # todo: move
+            self.note_buttons.append(temp_button)
 
     def lock_and_shade_cells(self, board_to_shade):
         """ locks and colors cells dark """
@@ -368,7 +392,7 @@ class PixelGUI(tk.Tk):
                 canvas_id = self.board_gui_data[i][j].canvas_id
                 text_id = self.board_gui_data[i][j].text_id
                 number = board_to_shade[i][j]
-                fill = '#D4D4D4'  # is 'grey83'; previous was 'gray77'
+                fill = self.LOCKED_CELL_FILL_COLOR
                 if number == 0:  # reset old value
                     fill = ''
                     number = ''
@@ -380,6 +404,11 @@ class PixelGUI(tk.Tk):
                 self.play_board.itemconfigure(text_id, text=number)
                 self.play_board.lower(canvas_id)
 
+    def hide_notes(self, i, j):
+        for k in range(1,10):
+            n_id = self.board_gui_data[i][j].note_ids[k]
+            self.play_board.itemconfigure(n_id, state=tk.HIDDEN)
+
     def limited_update(self, changed_cells) -> None:
         """ changed_cells parameter of type [(i, j, value)] """
         if not changed_cells:
@@ -390,6 +419,8 @@ class PixelGUI(tk.Tk):
             if val == 0:  # prevents display of zeros
                 val = ''
             self.play_board.itemconfig(text_id, text=val)
+            self.hide_notes(i, j)
+
         self.board_state_change = True
 
     def update_entire_board(self, new_board, state_change=True) -> None:
@@ -403,14 +434,17 @@ class PixelGUI(tk.Tk):
                     number = ''
 
                 self.play_board.itemconfig(text_id, text=number)
+                self.hide_notes(i, j)
         if state_change:
             self.board_state_change = True
 
-    def spawn_num_selector(self, e):
+    def spawn_num_selector(self, i, j):
         board_width = self.play_board.winfo_width()
         board_height = self.play_board.winfo_height()
-        x = e.x_root - self.play_board.winfo_rootx()
-        y = e.y_root - self.play_board.winfo_rooty()
+        canvas_id = self.board_gui_data[i][j].canvas_id
+        x1y1x2y2 = self.play_board.coords(canvas_id)
+        x = x1y1x2y2[2] - self.CELL_SIZE / 2
+        y = x1y1x2y2[3] - self.CELL_SIZE / 2
         x_rel = x / board_width
         y_rel = y / board_height
 
@@ -423,6 +457,7 @@ class PixelGUI(tk.Tk):
             anchor = 's'
         elif y_rel < .33:
             anchor = 'n'
+
         if x_rel > .66:
             anchor += 'e'
         elif x_rel < .33:

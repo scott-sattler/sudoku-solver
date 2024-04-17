@@ -58,6 +58,8 @@ class SudokuApp:
     easy_clue_size = 34
     medium_clue_size = 28
 
+    # PRIMARY_BUTTON = "<Button-1>"  # todo: unimplemented
+
     # # logger = logging.getLogger(__name__)
     # logging.basicConfig(filename='main_log.log', encoding='utf-8', level=logging.DEBUG)
     # logging.getLogger()
@@ -77,39 +79,37 @@ class SudokuApp:
         self.gui.initialize_control_board()
         self.gui.initialize_board_selector_menu()
         self.gui.initialize_num_selector_popup()
-        self.bindings()
+        self.gui.initialize_notes_panel()
+        self.bindings()  # call last
         self.gui.update_entire_board(self.gui.welcome_message, state_change=False)
-        # self.gui.initialize_notes_panel()
 
     def bindings(self):
         # todo: hold and drag Tkinter bug; have to code workaround or ignore
-        # self.gui.bind("<Button-1>", self.event_handler)
-        self.gui.bind("<ButtonRelease-1>", self.event_handler)
+        self.gui.bind("<Button-1>", self.event_handler)
+        # self.gui.bind("<ButtonRelease-1>", self.event_handler)
         # self.gui.bind("<Button-2>", self.event_handler)
-        # self.gui.bind("<Button-3>", self.event_handler)
-        self.gui.bind("<ButtonRelease-3>", self.event_handler)
+        self.gui.bind("<Button-3>", self.event_handler)
+        # self.gui.bind("<ButtonRelease-3>", self.event_handler)
         self.gui.bind("<c>", lambda e: self.gui.toggle_color())
 
-        # todo: consolidate into shder fn
-        def button_enter(e):
-            shade = 32
-            rgb = e.widget['bg'][1:]
-            rgb_hex = (rgb[:2], rgb[2:4], rgb[4:])
-            to_ints = tuple(map(lambda x: int(f'{x:<02}', 16), rgb_hex))
-            offset = tuple(map(lambda x: (x - shade) % 256, to_ints))
-            # restore = tuple(map(lambda x: (x + shade) % 256, to_ints))
-            cycled = '#' + ''.join(map(lambda x: f'{hex(x)[2:]:<02}', offset))
-            e.widget['bg'] = cycled
+        # todo: consolidate into shader fn
+        def enter_button_shade(e):
+            # does not work with colorized cells (debug/fun tools)
+            if e.widget['bg'] == self.gui.BUTTON_COLOR:
+                e.widget['bg'] = self.gui.BUTTON_HOVER_COLOR
 
-        def button_leave(e):
-            shade = 32
-            rgb = e.widget['bg'][1:]
-            rgb_hex = (rgb[:2], rgb[2:4], rgb[4:])
-            to_ints = tuple(map(lambda x: int(f'{x:<02}', 16), rgb_hex))
-            # offset = tuple(map(lambda x: (x - shade) % 256, to_ints))
-            restore = tuple(map(lambda x: (x + shade) % 256, to_ints))
-            cycled = '#' + ''.join(map(lambda x: f'{hex(x)[2:]:<02}', restore))
-            e.widget['bg'] = cycled
+        # noinspection SpellCheckingInspection
+        def leave_button_unshade(e):
+            # does not work with colorized cells (debug/fun tools)
+            if e.widget['bg'] == self.gui.BUTTON_HOVER_COLOR:
+                e.widget['bg'] = self.gui.BUTTON_COLOR
+
+        def enter_notes_hide(e):
+            self.gui.num_selector_popup.place_forget()
+
+        def leave_notes_show(e):
+            i, j = self.gui.selected_cell
+            self.gui.spawn_num_selector(i, j)
 
         """ manually bind all buttons because my_boss chose dated framework """
         s_b_m_c = self.gui.select_board_menu_container
@@ -120,8 +120,11 @@ class SudokuApp:
         """              ^ container            ^ backdrop                  """
         all_children = s_b_m_c_children + c_p_c_children
         for button in all_children:
-            button.bind("<Enter>", button_enter)
-            button.bind("<Leave>", button_leave)
+            button.bind("<Enter>", enter_button_shade)
+            button.bind("<Leave>", leave_button_unshade)
+
+        self.gui.notes_panel_container.bind("<Enter>", enter_notes_hide)
+        self.gui.notes_panel_container.bind("<Leave>", leave_notes_show)
 
         # todo: debuggin' ma life away
         import utilities as u
@@ -187,9 +190,10 @@ class SudokuApp:
             if (cbw - offset) > x > offset and (cbh - offset) > y > offset:
                 obj_ids = board.find_closest(x, y)
                 id_ = obj_ids[0]
+                tags = board.gettags(id_)
 
-                # if board cell was selected
-                if board.gettags(id_)[0] == 'cell':
+                # if board cell (or cell note) was selected
+                if 'cell' in tags or 'note' in tags:
                     i, j = self.gui.board_index_lookup.get(id_)
                     if self.gui.board_gui_data[i][j].locked:
                         # ignore locked (loaded board) cells
@@ -198,19 +202,21 @@ class SudokuApp:
                         # delete cell entry on right click
                         self.gui.limited_update([(i, j, 0)])
                         canvas_id = self.gui.board_gui_data[i][j].canvas_id
-                        self.gui.play_board.itemconfigure(canvas_id, fill='#ffffff')
+                        self.gui.play_board.itemconfigure(canvas_id, fill='#ffffff')  # todo: move to gui  as fn?
                     elif not self.gui.selected_cell:
                         # record cell and spawn number selector popup
-                        self.gui.selected_cell = self.gui.board_index_lookup.get(id_)
-                        self.gui.spawn_num_selector(event)
+                        self.gui.selected_cell = (i, j)
+                        self.gui.spawn_num_selector(i, j)
+                        self.gui.notes_panel_container.place(relx=.5, rely=.94, width=490, height=60, anchor=tk.CENTER)  # todo: move
+
                         self.gui.has_lock = self.gui.play_board
-                        # self.gui.verify_button['state'] = tk.DISABLED
-                        # self.gui.solve_button['state'] = tk.DISABLED
+
+                        canvas_id = self.gui.board_gui_data[i][j].canvas_id
+                        self.gui.play_board.itemconfigure(canvas_id, fill='#D3D3D3')  # todo: move to gui  as fn?
                     else:
                         reset_ui_state()
-
                 # if the num selector was selected
-                elif board.gettags(id_)[0] == 'num':
+                elif 'num' in tags:
                     val = self.gui.num_selector_lookup.get(id_)
                     i, j = self.gui.selected_cell
                     pb_obj_id = self.gui.board_gui_data[i][j].canvas_id
@@ -287,7 +293,6 @@ class SudokuApp:
                 self.gui.verify_button['state'] = tk.DISABLED
 
         def verify():
-
             from solver_engine import SolverEngine  # todo:
             se = SolverEngine()  # todo:
 
@@ -307,13 +312,35 @@ class SudokuApp:
 
         def reset_ui_state():
             self.gui.select_board_menu_container.place_forget()
+            self.gui.notes_panel_container.place_forget()
             self.gui.num_selector_popup.place_forget()
+
+            if self.gui.selected_cell is not None:
+                i, j = self.gui.selected_cell
+                canvas_id = self.gui.board_gui_data[i][j].canvas_id
+                self.gui.play_board.itemconfigure(canvas_id, fill='#ffffff')
+
             self.gui.selected_cell = None
             self.gui.has_lock = None
+
 
         if e.num == 2:
             self.debugging_tools_change_obj_color(e)
             return
+
+        # todo: control flow outer
+        if e.widget in self.gui.note_buttons:
+            if not self.gui.selected_cell:
+                return
+            i, j = self.gui.selected_cell
+            # disallow notes on filled cells
+            if self.gui.board_gui_data[i][j].value > 0:
+                return
+
+            num = int(e.widget.cget('text'))
+            # i, j = self.gui.selected_cell
+            note_id = self.gui.board_gui_data[i][j].note_ids[num]
+            self.gui.play_board.itemconfigure(note_id, state=tk.NORMAL)
 
         # clears, on any input, valid/invalid results
         if self.gui.title_label.cget('text') != self.gui.title_text:
@@ -344,7 +371,7 @@ class SudokuApp:
                 """ even if place(*args) is called at creation """
                 p_rows = 4
                 self.gui.select_board_menu_container.place(
-                    relx=.5, rely=.5, width=400, height=60*p_rows, anchor=tk.CENTER)
+                    relx=.5, rely=.5, width=400, height=60 * p_rows, anchor=tk.CENTER)
                 self.gui.has_lock = self.gui.select_board_menu_container
             # ~ self.gui.select_board_menu_container.winfo_viewable():
             elif self.gui.select_board_menu_container == self.gui.has_lock:

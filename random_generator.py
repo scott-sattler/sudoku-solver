@@ -62,7 +62,6 @@ class RandomBoard:
 
         board_copy = self.manual_copy_fast(adjust_board)
 
-        # best_found = (0, adjust_board)  # todo
         agenda = [(0, board_copy)]
         while agenda:
             if sec > 0 and t.time() > t_0 + sec:
@@ -73,9 +72,6 @@ class RandomBoard:
 
             # count squares, columns, and rows with most 'neighbors'
             neighbor_count = self.most_neighbors(curr_board)
-            # if removed > best_found[0]:
-            #     # print('new maximum depth', most_deep[0])  # todo  # noqa
-            #     best_found = (removed, self.manual_copy_fast(curr_board))
             if neighbor_count[1] <= starting_cells:
                 return curr_board
             sorted_count = neighbor_count[0]
@@ -98,8 +94,6 @@ class RandomBoard:
                 if len(solutions) < 2:
                     agenda.append((removed + 1, next_board))
 
-        # print('failed to find\ncurrent depth:', best_found[0])
-        # return best_found[1]
         return [[-1 for _ in range(9)] for _ in range(9)]
 
     # recursive practice

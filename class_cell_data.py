@@ -1,9 +1,10 @@
 class CellData:
-    def __init__(self, value=None, text_id=None, canvas_id=None, locked=False):
+    def __init__(self, value=None, text_id=None, canvas_id=None, note_ids=None, locked=False):
         self.value = value  # actual value to display (as text)
         self.text_id = text_id
         self.canvas_id = canvas_id
         self.locked = locked  # locked when loading a board
+        self.note_ids = note_ids
         # self.parent = None
         # self.color = '#ffffff'
 
