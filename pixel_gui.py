@@ -19,7 +19,7 @@ class PixelGUI(tk.Tk):
     BUTTON_COLOR = '#ffffff'
     BUTTON_HOVER_COLOR = '#dfdfdf'
     DEFAULT_CELL_COLOR = '#ffffff'
-    SELECT_HIGHLIGHT_COLOR = '#d3d3d3'  # todo: unimplemented
+    SELECT_HIGHLIGHT_COLOR = '#d3d3d3'
     LOCKED_CELL_FILL_COLOR = '#eeeeee'
     NOTE_COLOR = '#808080'
 
@@ -40,9 +40,8 @@ class PixelGUI(tk.Tk):
 
         self.board_font = "fixedsys"
         self.font_size = int(12 / 25.000 * self.CELL_SIZE)
-        self.abort = False  # todo: reconsider
 
-        self.title_text = 'SUDOKU SOLVER'
+        self.title_text = 'SUDOKU SOLVER'  # todo: rename
         self.title_container = None
         self.title_label = None
 
@@ -100,7 +99,6 @@ class PixelGUI(tk.Tk):
             bg='#ffffff', borderwidth=0, highlightthickness=0,
         )
         self.play_board.pack()
-
 
         self.fill_count = 0  # allows cycling; current only in debug keybind
         '''            red        green      blue       yellow     grey       cyan       magenta    orange     purple  '''  # noqa
@@ -197,7 +195,7 @@ class PixelGUI(tk.Tk):
                     cell_size / 2 + (j * cell_size) + 4,
                     cell_size / 2 + (i * cell_size) + 4,
                     font=(self.board_font, font_size),
-                    text='',  # str(i) + str(j)
+                    text='',
                     tags="cell",
                 )
 
@@ -211,9 +209,9 @@ class PixelGUI(tk.Tk):
                             mid_j - 14 + (p * 14),
                             font=(self.board_font, 8),
                             text=f'{(3 * p) + q + 1}',
-                            tags='note',
                             anchor=tk.CENTER,
-                            fill=self.NOTE_COLOR,  # '#808080'  # 'grey'
+                            fill=self.NOTE_COLOR,  # '#808080'
+                            tags='note',
                         )
                         note_ids.append(note_id)
 
@@ -248,15 +246,15 @@ class PixelGUI(tk.Tk):
                 num = (i * 3) + (j + 1)
                 color = self.fill[num - 1] if self.cell_colors else '#ffffff'
 
-                canvas_id = self.num_selector_popup.create_rectangle(
+                cell_id = self.num_selector_popup.create_rectangle(
                     j * (width / 3) + border_width + rect_b_width,
                     i * (width / 3) + border_width + rect_b_width,
                     j * (width / 3) + cell_size + border_width / 3,
                     i * (width / 3) + cell_size + border_width / 3,
-                    width=rect_b_width, fill=color,  # fill='cyan',
+                    width=rect_b_width, fill=color,
                     tags=('num', 'backdrop'),
                 )
-                self.num_selector_lookup[canvas_id] = num
+                self.num_selector_lookup[cell_id] = num
 
                 text_id = self.num_selector_popup.create_text(
                     j * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
@@ -390,7 +388,7 @@ class PixelGUI(tk.Tk):
         """ locks and colors cells dark """
         for i in range(len(self.board_gui_data)):
             for j in range(len(self.board_gui_data[0])):
-                canvas_id = self.board_gui_data[i][j].cell_id
+                cell_id = self.board_gui_data[i][j].cell_id
                 text_id = self.board_gui_data[i][j].text_id
                 number = board_to_shade[i][j]
                 fill = self.LOCKED_CELL_FILL_COLOR
@@ -401,14 +399,9 @@ class PixelGUI(tk.Tk):
                 else:
                     self.board_gui_data[i][j].locked = True
 
-                self.play_board.itemconfigure(canvas_id, fill=fill)
+                self.play_board.itemconfigure(cell_id, fill=fill)
                 self.play_board.itemconfigure(text_id, text=number)
-                self.play_board.lower(canvas_id)
-
-    def hide_notes(self, i, j):
-        for k in range(1,10):
-            n_id = self.board_gui_data[i][j].note_ids[k]
-            self.play_board.itemconfigure(n_id, state=tk.HIDDEN)
+                self.play_board.lower(cell_id)
 
     def limited_update(self, changed_cells) -> None:
         """ changed_cells parameter of type [(i, j, value)] """
@@ -418,10 +411,15 @@ class PixelGUI(tk.Tk):
             i, j = ij[0], ij[1]
             self.board_gui_data[i][j].value = val
             text_id = self.board_gui_data[i][j].text_id
-            if val == 0:  # prevents display of zeros
-                val = ''
+            if val == 0:
+                # reset zeroed cells
+                cell_id = self.board_gui_data[i][j].cell_id
+                self.play_board.itemconfigure(cell_id, fill=self.DEFAULT_CELL_COLOR)
+                val = ''  # prevents display of zeros
             self.play_board.itemconfig(text_id, text=val)
             self.hide_notes(i, j)
+
+
 
         self.board_state_change = True
 
@@ -440,11 +438,16 @@ class PixelGUI(tk.Tk):
         if state_change:
             self.board_state_change = True
 
+    def spawn_board_selector(self):
+        p_rows = 4  # todo
+        self.select_board_menu_container.place(
+            relx=.5, rely=.5, width=400, height=60 * p_rows, anchor=tk.CENTER)
+
     def spawn_num_selector(self, i, j):
         board_width = self.play_board.winfo_width()
         board_height = self.play_board.winfo_height()
-        canvas_id = self.board_gui_data[i][j].cell_id
-        x1y1x2y2 = self.play_board.coords(canvas_id)
+        cell_id = self.board_gui_data[i][j].cell_id
+        x1y1x2y2 = self.play_board.coords(cell_id)
         x = x1y1x2y2[2] - self.CELL_SIZE / 2
         y = x1y1x2y2[3] - self.CELL_SIZE / 2
         x_rel = x / board_width
@@ -470,6 +473,12 @@ class PixelGUI(tk.Tk):
     def spawn_notes_panel(self):
         self.notes_panel_container.place(
             relx=.5, rely=.94, width=490, height=60, anchor=tk.CENTER)
+
+    def hide_notes(self, i, j):
+        """ hides all notes taken """
+        for k in range(1,10):
+            n_id = self.board_gui_data[i][j].note_ids[k]
+            self.play_board.itemconfigure(n_id, state=tk.HIDDEN)
 
     def toggle_color(self):
         self.cell_colors = not self.cell_colors

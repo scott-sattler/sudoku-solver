@@ -30,11 +30,10 @@ class ListNode:
 
 
 class SolverEngine:
-    def __init__(self, board=None):
-        self.dhead = ListNode(None)
+    def __init__(self):
+        pass
 
     def find_empty(self, board) -> tuple[int, int]:
-        # return self._find_empty(board)
         return self._find_empty_greedy(board)
 
     def hv_rule_check(self, board, i, j) -> bool:
@@ -60,9 +59,7 @@ class SolverEngine:
     def solve_board(self, board_data):
         return self._solve_board(board_data)
 
-
     ###########################################################################
-
 
     def _solve_board(self, board_data):
         from copy import deepcopy
@@ -95,7 +92,6 @@ class SolverEngine:
                     if sent == 'stop':
                         break
                     last_board = deepcopy(curr_board)
-
 
     @staticmethod
     def _find_empty_greedy(board) -> tuple[int, int] | None:
@@ -168,9 +164,7 @@ class SolverEngine:
     @staticmethod
     def _hv_find(board, i, j, value) -> bool:
         """ checks board (i, j) row and colum for value"""
-
         board_val = value
-
         for var_ij in range(len(board)):
             if value or (i, var_ij) != (i, j):
                 if board[i][var_ij] == board_val:

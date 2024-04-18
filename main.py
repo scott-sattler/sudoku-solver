@@ -92,6 +92,10 @@ class SudokuApp:
         self.bindings()  # call last
         self.gui.update_entire_board(self.gui.welcome_message, state_change=False)
 
+        self.state_welcome = True
+        self.state_solving = False
+        self.abort = False
+
     def bindings(self):
         # todo: review todo below; have changed functionality since
         # todo: hold and drag Tkinter bug; have to code workaround or ignore
@@ -287,33 +291,36 @@ class SudokuApp:
         def board_input(event):  # todo: this should only be called when board input (see below)
             if not self.gui.board_loaded:
                 return
+            if self.state_solving:
+                return
 
             board = event.widget  # play board OR num selector
             x = event.x_root - board.winfo_rootx()  # todo: is this e.x?
             y = event.y_root - board.winfo_rooty()  # todo: is this e.y?
             cb = self.gui.play_board
-            cbw = cb.winfo_reqwidth()
-            cbh = cb.winfo_reqwidth()
             offset = self.gui.offset / (self.gui.BOARD_SIZE - 1)  # canvas lines/cells offset
 
             obj_ids = board.find_closest(x, y)
             id_ = obj_ids[0]
             tags = board.gettags(id_)
 
-            if not self.mouse_in_play_area(e):  # todo: this shouldn't be necessary (see above)
+            if self.mouse_in_play_area(e):  # todo: this shouldn't be necessary (see above)
+                i, j = self.gui.board_index_lookup.get(id_)
+            else:
                 return
 
+            # if a note was registered (vs cell) on delete command
+            if e.num == 3:
+                self.gui.limited_update([((i, j), 0)])
+                self.cell_selection_queue.pop((i, j))
             # if board cell (or cell note) was selected
-            if 'cell' in tags:
-                i, j = self.gui.board_index_lookup.get(id_)
+            elif 'cell' in tags or 'note' in tags:
                 if self.gui.board_gui_data[i][j].locked:
                     # ignore locked (loaded board) cells
                     reset_ui_state()
-                elif e.num == 3:  # and not self.gui.selected_cell:  # todo: move to fn?
-                    # delete cell entry on right click
-                    self.gui.limited_update([((i, j), 0)])
-                    cell_id = self.gui.board_gui_data[i][j].cell_id
-                    self.gui.play_board.itemconfigure(cell_id, fill='#ffffff')  # todo: move to gui  as fn?
+                # elif e.num == 3:  # and not self.gui.selected_cell:  # todo: move to fn?
+                #     # delete cell entry on right click
+                #     self.gui.limited_update([((i, j), 0)])
                 elif not self.cell_selection_queue:  # self.gui.selected_cell:
                     # record cell and spawn number selector popup
                     # self.gui.selected_cell = (i, j)  # todo: deprecated
@@ -338,6 +345,7 @@ class SudokuApp:
                     cb.itemconfigure(pb_obj_id, fill='#ffffff')  # todo:
                     cells_to_update.append((ij, val))
                 self.gui.limited_update(cells_to_update)
+            else:
                 reset_ui_state()
 
         # todo: refactor further ?; kept from old design
@@ -370,19 +378,15 @@ class SudokuApp:
             generator_solver = self.se.solve_board(board_data)
 
             for next_limited_update in generator_solver:
-                if self.gui.abort:
+                if self.abort:
                     # generator_solver.send('stop')
-                    self.gui.abort = False
+                    self.abort = False
                     break
 
                 if not next_limited_update:
                     break
                 self.gui.limited_update(next_limited_update)
                 self.gui.update()
-
-            self.gui.solve_button.config(text='SOLVE')
-            self.gui.solve_button['state'] = tk.DISABLED
-            # self.gui.select_button['state'] = tk.NORMAL
 
         # todo: keep validation result until board state changes
         # todo: probably refactor (eg board_state_change confusing)
@@ -394,19 +398,23 @@ class SudokuApp:
                 self.gui.solve_button.config(text='ABORT?')
                 self.gui.verify_button['state'] = tk.DISABLED
                 self.gui.select_button['state'] = tk.DISABLED
+                self.state_solving = True
                 solve_board()
+                self.gui.solve_button.config(text='SOLVE')
+                self.gui.solve_button['state'] = tk.DISABLED
+                self.state_solving = False
                 self.gui.select_button['state'] = tk.NORMAL
                 self.gui.verify_button['state'] = tk.NORMAL
                 self.gui.board_loaded = False
                 verify()
                 self.gui.board_state_change = False
             else:  # solve_button.cget('text') == 'ABORT?'
-                self.gui.abort = True
+                self.abort = True
                 self.gui.verify_button['state'] = tk.DISABLED
 
+        # to do: separate gui verify state
         def verify():
-            from solver_engine import SolverEngine  # todo:
-            se = SolverEngine()  # todo:
+            se = SolverEngine()
 
             if se.validate_board(convert_board()):
                 self.gui.title_label.config(
@@ -446,7 +454,6 @@ class SudokuApp:
                 num = int(e.widget.cget('text'))
                 note_id = self.gui.board_gui_data[i][j].note_ids[num]
                 self.gui.play_board.itemconfigure(note_id, state=tk.NORMAL)
-
 
         # clears, on any input, valid/invalid results
         if self.gui.title_label.cget('text') != self.gui.title_text:
@@ -494,7 +501,9 @@ class SudokuApp:
                 return
             click_solve()
         elif e.widget == self.gui.verify_button:
-            if not self.gui.board_loaded or self.gui.has_lock:
+            if not self.gui.board_loaded:
+                return
+            if self.gui.has_lock or self.state_solving:
                 return
             if self.gui.verify_button['state'] == tk.NORMAL:
                 verify()
@@ -508,6 +517,7 @@ class SudokuApp:
             self.gui.verify_button['state'] = tk.NORMAL
 
         self.gui.update()
+
 
     def run(self):
         self.gui.mainloop()
