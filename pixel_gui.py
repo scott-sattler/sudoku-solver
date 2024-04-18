@@ -16,11 +16,12 @@ with open(ICON_PATH, 'wb') as icon_file:
 class PixelGUI(tk.Tk):
     BOARD_SIZE = 9
     CELL_SIZE = 50
-    LOCKED_CELL_FILL_COLOR = '#EEEEEE'
-    NOTE_COLOR = '#808080'
     BUTTON_COLOR = '#ffffff'
     BUTTON_HOVER_COLOR = '#dfdfdf'
-    # SELECT_HIGHLIGHT_COLOR = '#D3D3D3'  # todo: unimplemented
+    DEFAULT_CELL_COLOR = '#ffffff'
+    SELECT_HIGHLIGHT_COLOR = '#d3d3d3'  # todo: unimplemented
+    LOCKED_CELL_FILL_COLOR = '#eeeeee'
+    NOTE_COLOR = '#808080'
 
     def __init__(self, easy_clue_size, medium_clue_size, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
@@ -183,7 +184,7 @@ class PixelGUI(tk.Tk):
         # creates canvas and text box for each cell
         for i in range(len(self.board_gui_data)):
             for j in range(len(self.board_gui_data[0])):  # assumes rectangular
-                canvas_id = self.play_board.create_rectangle(
+                cell_id = self.play_board.create_rectangle(
                     j * 50 + self.offset / 8,
                     i * 50 + self.offset / 8,
                     (j + 1) * 50 + self.offset / 8,
@@ -216,8 +217,8 @@ class PixelGUI(tk.Tk):
                         )
                         note_ids.append(note_id)
 
-                self.play_board.lower(canvas_id)
-                self.board_gui_data[i][j].canvas_id = canvas_id
+                self.play_board.lower(cell_id)
+                self.board_gui_data[i][j].cell_id = cell_id
                 self.board_gui_data[i][j].text_id = txt_id
                 self.board_gui_data[i][j].note_ids = note_ids
                 for id_ in note_ids:
@@ -225,7 +226,7 @@ class PixelGUI(tk.Tk):
                     self.board_index_lookup[id_] = (i, j)
 
                 self.board_index_lookup[txt_id] = (i, j)
-                self.board_index_lookup[canvas_id] = (i, j)
+                self.board_index_lookup[cell_id] = (i, j)
 
     def initialize_num_selector_popup(self):
         cell_size = self.CELL_SIZE
@@ -389,7 +390,7 @@ class PixelGUI(tk.Tk):
         """ locks and colors cells dark """
         for i in range(len(self.board_gui_data)):
             for j in range(len(self.board_gui_data[0])):
-                canvas_id = self.board_gui_data[i][j].canvas_id
+                canvas_id = self.board_gui_data[i][j].cell_id
                 text_id = self.board_gui_data[i][j].text_id
                 number = board_to_shade[i][j]
                 fill = self.LOCKED_CELL_FILL_COLOR
@@ -413,7 +414,8 @@ class PixelGUI(tk.Tk):
         """ changed_cells parameter of type [(i, j, value)] """
         if not changed_cells:
             return
-        for i, j, val in changed_cells:
+        for ij, val in changed_cells:
+            i, j = ij[0], ij[1]
             self.board_gui_data[i][j].value = val
             text_id = self.board_gui_data[i][j].text_id
             if val == 0:  # prevents display of zeros
@@ -441,7 +443,7 @@ class PixelGUI(tk.Tk):
     def spawn_num_selector(self, i, j):
         board_width = self.play_board.winfo_width()
         board_height = self.play_board.winfo_height()
-        canvas_id = self.board_gui_data[i][j].canvas_id
+        canvas_id = self.board_gui_data[i][j].cell_id
         x1y1x2y2 = self.play_board.coords(canvas_id)
         x = x1y1x2y2[2] - self.CELL_SIZE / 2
         y = x1y1x2y2[3] - self.CELL_SIZE / 2
@@ -464,6 +466,10 @@ class PixelGUI(tk.Tk):
             anchor += 'w'
 
         self.num_selector_popup.place(relx=x_rel, rely=y_rel, anchor=anchor)
+
+    def spawn_notes_panel(self):
+        self.notes_panel_container.place(
+            relx=.5, rely=.94, width=490, height=60, anchor=tk.CENTER)
 
     def toggle_color(self):
         self.cell_colors = not self.cell_colors

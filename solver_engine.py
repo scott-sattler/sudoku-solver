@@ -90,7 +90,7 @@ class SolverEngine:
                         for j_u in range(9):
                             val = curr_board[i_u][j_u]
                             if val != last_board[i_u][j_u]:
-                                next_limited_update.append((i_u, j_u, val))
+                                next_limited_update.append(((i_u, j_u), val))
                     sent = yield next_limited_update
                     if sent == 'stop':
                         break
