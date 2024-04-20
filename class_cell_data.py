@@ -16,4 +16,9 @@ class CellData:
     #     self.parent.itemconfigure(fill=color)
 
     def __repr__(self):
-        return str((self.value, self.text_id, self.cell_id))
+        info = (f"value: {self.value}\n"
+                f"text_id : {self.text_id}\n"
+                f"cell_id : {self.cell_id}\n"
+                f"locked : {self.locked}\n"
+                f"note_ids : {self.note_ids}\n")
+        return info
