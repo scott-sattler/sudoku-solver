@@ -3,7 +3,7 @@ import solver_engine
 import time as t
 
 
-class RandomBoard:
+class BoardOperations:
     # note: using m by n notation
     def __init__(self, board_width, board_height):
         self.m = board_width
@@ -50,11 +50,11 @@ class RandomBoard:
                 next_i = i + ((j + 1) // n)
                 next_j = (j + 1) % n
                 board_copy = self.manual_copy_fast(next_board)
-                if next_i > (m - 1):
+                if next_i < 9:
+                    agenda.append([(next_i, next_j), board_copy])
+                else:  # next_i > (m - 1)
                     valid_boards.append(board_copy)
                     return valid_boards[0]
-                else:  # next_i < 9:
-                    agenda.append([(next_i, next_j), board_copy])
 
     # NOTE: limited backtracking
     def adjust_difficulty(self, adjust_board, starting_cells, sec=0):
@@ -240,44 +240,10 @@ if __name__ == '__main__':
     import utilities as u
 
     test_m = u.matrix_01()
-    rg = RandomBoard(9, 9)
+    rg = BoardOperations(9, 9)
     # foo = rg.most_neighbors(test_m)
     # print(foo)
-    # foo.sort()
-    # print(foo)
-
-    # rand__t_board = rg.generate_randomly_filled_valid_board()
-    # t_adjusted = rg.adjust_difficulty(rand__t_board, 40)
+    #
+    # rand_t_board = rg.generate_randomly_filled_valid_board()
+    # t_adjusted = rg.adjust_difficulty(rand_t_board, 40)
     # print(u.strip_for_print(t_adjusted))
-
-    import cProfile
-    import pstats
-
-    profiler = cProfile.Profile()
-    profiler.enable()
-    # t_board = rg.generate_board(34)
-    t_board = rg.generate_board(28)
-    t_board_solutions = rg.find_solutions(t_board)
-    # print(t_board)
-    for each in t_board_solutions:
-        print(u.strip_for_print(each))
-        print(u.board_to_str(each))
-    print(u.board_to_str(t_board))
-    # print(t_board_solutions)
-    profiler.disable()
-
-    stats = pstats.Stats(profiler).sort_stats('cumtime')
-    stats.print_stats()
-
-    stats = pstats.Stats(profiler).sort_stats('tottime')
-    stats.print_stats()
-
-    # stats = pstats.Stats(profiler).sort_stats('ncalls')
-    # stats.print_stats()
-
-
-    # invalid_board = '.4.265....5.6..9.8.8..2.76....3....56.5.976....9.3..7.1.81...4.92...9.1.8967......'
-    # invalid_board = u.str_to_board(invalid_board)
-    # print(invalid_board)
-    # t_board_solutions = rg.find_solutions(invalid_board)
-    # print(len(t_board_solutions))
