@@ -16,9 +16,10 @@ with open(ICON_PATH, 'wb') as icon_file:
 class PixelGUI(tk.Tk):
     BOARD_SIZE = 9
     CELL_SIZE = 50
-    BUTTON_COLOR = '#ffffff'
+    DEFAULT_COLOR = '#ffffff'
+    BUTTON_COLOR = DEFAULT_COLOR
     BUTTON_HOVER_COLOR = '#dfdfdf'
-    DEFAULT_CELL_COLOR = '#ffffff'
+    DEFAULT_CELL_COLOR = DEFAULT_COLOR
     SELECT_HIGHLIGHT_COLOR = '#d3d3d3'
     LOCKED_CELL_FILL_COLOR = '#eeeeee'
     NOTE_COLOR = '#808080'
@@ -70,14 +71,6 @@ class PixelGUI(tk.Tk):
         self.random_medium_board_button = None
         self.random_pick_17_board_button = None
 
-        # todo: deprecated; remove/refactor
-        self.board_state_change = False  # todo: deprecated; remove/refactor
-        self.board_loaded = False  # todo: deprecated; remove/refactor
-        self.selected_cell = None  # todo: deprecated; remove/refactor
-        self.has_lock = None  # todo: deprecated; remove/refactor
-        # self.is_solvable = False  # todo: deprecated; remove/refactor
-        # self.can_take_lock = list()  # todo: deprecated; remove/refactor
-
         self.validation_message = None
 
         self.board_index_lookup = dict()  # lookup from tk id
@@ -92,11 +85,11 @@ class PixelGUI(tk.Tk):
         self.title_container = tk.Canvas(self.container)
 
         self.play_board = tk.Canvas(self.container)
+        self.play_board.config(borderwidth=0, highlightthickness=0)
         self.play_board.config(
             height=self.play_board_height,
             width=self.play_board_width,
-            bg='#ffffff', borderwidth=0, highlightthickness=0,
-        )
+            bg=self.DEFAULT_COLOR)
         self.play_board.pack()
 
         self.fill_count = 0  # allows cycling; current only in debug keybind
@@ -117,19 +110,16 @@ class PixelGUI(tk.Tk):
 
 
     def initialize_title(self):
-        font_size = self.font_size
-
         self.title_container = tk.Canvas(self.container)
         self.title_container.config(borderwidth=0, highlightthickness=0)
         self.title_container.pack(before=self.play_board)  # todo: order of execution dependence
 
-        self.title_label = tk.Label(
-            self.title_container,
+        self.title_label = tk.Label(self.title_container)
+        self.title_label.config(
             text=self.title_text,
-            font=(self.board_font, font_size * 2),
-            bg="#fff",
-            padx=20,
-        )
+            font=(self.board_font, self.font_size * 2),
+            bg=self.DEFAULT_COLOR,
+            padx=20)
         self.title_label.pack()
 
     def initialize_play_board(self):
@@ -186,7 +176,8 @@ class PixelGUI(tk.Tk):
                     i * 50 + self.offset / 8,
                     (j + 1) * 50 + self.offset / 8,
                     (i + 1) * 50 + self.offset / 8,
-                    width=0, fill="#ffffff",
+                    width=0,
+                    fill=self.DEFAULT_CELL_COLOR,
                     tags="cell",
                 )
 
@@ -208,7 +199,6 @@ class PixelGUI(tk.Tk):
                             mid_j - 14 + (p * 14),
                             font=(self.board_font, 8),
                             text=f'{(3 * p) + q + 1}',
-                            anchor=tk.CENTER,
                             fill=self.NOTE_COLOR,  # '#808080'
                             tags='note',
                         )
@@ -234,8 +224,11 @@ class PixelGUI(tk.Tk):
 
         self.num_selector_popup = tk.Canvas(self.play_board)
         self.num_selector_popup.config(
-            width=width, height=height,
-            bg='#ffffff', borderwidth=border_width, highlightthickness=0)
+            width=width,
+            height=height,
+            bg=self.DEFAULT_COLOR,
+            borderwidth=border_width,
+            highlightthickness=0)
         self.num_selector_popup.place(relx=0, rely=0)
         self.num_selector_popup["state"] = tk.DISABLED
         self.num_selector_popup.place_forget()
@@ -278,14 +271,16 @@ class PixelGUI(tk.Tk):
 
         # note: Canvas has useful options and functionality versus Frame
         self.control_panel_container = tk.Canvas(self.container)
+        self.control_panel_container.config(highlightthickness=0)
         self.control_panel_container.config(
             width=self.play_board.winfo_reqwidth(),
-            height=self.CELL_SIZE, bg='#ffffff', highlightthickness=0,)
+            height=self.CELL_SIZE,
+            bg=self.DEFAULT_COLOR)
         self.control_panel_container.pack(fill=tk.BOTH, side=tk.BOTTOM, ipady=10)
 
         # solve, verify, and select buttons
         c_p_c = self.control_panel_container  # buttons parent
-        foo = tk.Frame(c_p_c, bg='#ffffff')
+        foo = tk.Frame(c_p_c, bg=self.DEFAULT_COLOR)
         foo.place(relx=.5, rely=.5, anchor=tk.CENTER)
 
         self.solve_button = formatted_button(foo, 'SOLVE', 1.2)
@@ -319,7 +314,8 @@ class PixelGUI(tk.Tk):
         # difficulty selector backdrop
         self.select_board_menu_container = (tk.Canvas(self.play_board))
         self.select_board_menu_container.config(
-            highlightthickness=2, highlightbackground='black')
+            highlightthickness=2,
+            highlightbackground='black')
         # place cannot be used here; settings are forgotten
 
         # exclusively for button alignment  # todo: local?
@@ -431,9 +427,7 @@ class PixelGUI(tk.Tk):
                 val = ''  # prevents display of zeros
             self.play_board.itemconfig(text_id, text=val)
 
-        self.board_state_change = True  # todo: refactor out; deprecated
-
-    def update_entire_board(self, new_board, state_change=True) -> None:
+    def update_entire_board(self, new_board) -> None:
         for i in range(len(new_board)):
             for j in range(len(new_board[0])):  # assumes rectangular
                 self.board_gui_data[i][j].value = new_board[i][j]
@@ -445,8 +439,6 @@ class PixelGUI(tk.Tk):
 
                 self.play_board.itemconfig(text_id, text=number)
                 self.hide_notes_at_cell(i, j)
-        if state_change:
-            self.board_state_change = True
 
     def spawn_board_selector(self):
         p_rows = 4  # todo
@@ -497,7 +489,7 @@ class PixelGUI(tk.Tk):
 
     def hide_notes_at_cell(self, i, j):
         """ hides all notes taken at cell (i, j) """
-        for k in range(1,10):
+        for k in range(1, 10):
             n_id = self.board_gui_data[i][j].note_ids[k]
             self.play_board.itemconfigure(n_id, state=tk.HIDDEN)
 
