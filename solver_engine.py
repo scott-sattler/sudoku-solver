@@ -36,15 +36,16 @@ class SolverEngine:
     def find_empty(self, board) -> tuple[int, int]:
         return self._find_empty_greedy(board)
 
-    def hv_rule_check(self, board, i, j) -> bool:
-        """ checks (i, j) row and colum for board[i][j] value"""
-        return self._hv_rule_check_fast(board, i, j)
+    # creating a stack frame is expensive
+    # exists in original place it was written in
+    # def hv_rule_check(self, board, i, j) -> bool:
+    #     """ checks (i, j) row and colum for board[i][j] value"""
+    #     return self._hv_rule_check_fast(board, i, j)
 
     def s_rule_check(self, board, i, j) -> bool:
         """ checks the local 9 square grid for board[i][j] value """
         return self._s_rule_check(board, i, j)
 
-    # todo: refactor
     def validate_board(self, board_data):
         for i in range(len(board_data)):
             for j in range(len(board_data)):
@@ -182,27 +183,63 @@ class SolverEngine:
                     return i, j
         return False
 
-    # correctness/naive/brute force implementation
-    @staticmethod
-    def _hv_rule_check(board, i, j) -> bool:
-        """ checks (i, j) row and colum for board[i][j] value"""
-        board_val = board[i][j]
-        for var_ij in range(len(board)):
-            if (i, var_ij) != (i, j) and board[i][var_ij] == board_val:
-                return False
-            if (var_ij, j) != (i, j) and board[var_ij][j] == board_val:
-                return False
-        return True
+    # @staticmethod
+    # def _hv_rule_check(board, i, j) -> bool:
+    #     """ checks (i, j) row and colum for board[i][j] value"""
+    #     board_val = board[i][j]
+    #     for var_ij in range(len(board)):
+    #         if (i, var_ij) != (i, j) and board[i][var_ij] == board_val:
+    #             return False
+    #         if (var_ij, j) != (i, j) and board[var_ij][j] == board_val:
+    #             return False
+    #     return True
 
     @staticmethod
-    def _hv_rule_check_fast(board, i, j):
+    # def _hv_rule_check_fast(board, i, j):
+    def hv_rule_check(board, i, j):  # creating a stack frame is expensive
         board_val = board[i][j]
-        for e in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
-            if board[e][j] == board_val and (i, j) != (e, j):
-                return False
-            if board[i][e] == board_val and (i, j) != (i, e):
-                return False
+        tuple_ij = (i, j)
+
+        if board[0][j] == board_val and tuple_ij != (0, j):
+            return False
+        if board[1][j] == board_val and tuple_ij != (1, j):
+            return False
+        if board[2][j] == board_val and tuple_ij != (2, j):
+            return False
+        if board[3][j] == board_val and tuple_ij != (3, j):
+            return False
+        if board[4][j] == board_val and tuple_ij != (4, j):
+            return False
+        if board[5][j] == board_val and tuple_ij != (5, j):
+            return False
+        if board[6][j] == board_val and tuple_ij != (6, j):
+            return False
+        if board[7][j] == board_val and tuple_ij != (7, j):
+            return False
+        if board[8][j] == board_val and tuple_ij != (8, j):
+            return False
+
+        if board[i][0] == board_val and tuple_ij != (i, 0):
+            return False
+        if board[i][1] == board_val and tuple_ij != (i, 1):
+            return False
+        if board[i][2] == board_val and tuple_ij != (i, 2):
+            return False
+        if board[i][3] == board_val and tuple_ij != (i, 3):
+            return False
+        if board[i][4] == board_val and tuple_ij != (i, 4):
+            return False
+        if board[i][5] == board_val and tuple_ij != (i, 5):
+            return False
+        if board[i][6] == board_val and tuple_ij != (i, 6):
+            return False
+        if board[i][7] == board_val and tuple_ij != (i, 7):
+            return False
+        if board[i][8] == board_val and tuple_ij != (i, 8):
+            return False
+
         return True
+
 
     # correctness/naive/brute force implementation
     @staticmethod
