@@ -59,32 +59,35 @@ from file_io import FileIO
 class StateManager:
     CURRENT = 'current'
     PREVIOUS = 'previous'
+    # INPUT_RESET = 'input_reset'
     WELCOME = 'welcome'
     BOARD_SELECTION = 'board_selection'
     BOARD_LOADED = 'board_loaded'
     # BOARD_INPUT = 'baord_input'
+    DOUBLE_CLICK_HIGHLIGHT = 'double_click_highlight'
     NUMBER_SELECTOR = 'number_selector'
     SOLVING_BOARD = 'solving_board'
-    ABORTED = 'aborted'
+    # ABORTED = 'aborted'
     VALIDATED = 'validated'
 
     all_states = [
         CURRENT,
         PREVIOUS,
+        # INPUT_RESET,
         WELCOME,
         BOARD_SELECTION,
         BOARD_LOADED,
         # BOARD_INPUT,
+        DOUBLE_CLICK_HIGHLIGHT,
         NUMBER_SELECTOR,
         SOLVING_BOARD,
-        ABORTED,
+        # ABORTED,
         VALIDATED,
     ]
 
     def __init__(self):
         self.state_manager: dict[str, bool | None | str] = dict()
         self.welcome_state()
-
 
     def welcome_state(self):
         for each_state in self.all_states:
@@ -106,27 +109,34 @@ class StateManager:
 
     def update_current(self, to_state):
         self.state_manager[self.CURRENT] = to_state
+        self.state_manager[to_state] = True
 
     def revert_state(self):
         prev = self.state_manager[self.PREVIOUS]
         curr = self.state_manager[self.CURRENT]
+        self.state_manager[prev] = True
+        self.state_manager[curr] = False
         self.state_manager[self.PREVIOUS] = curr
         self.state_manager[self.CURRENT] = prev
 
     def board_selector_enable(self):
         self.update_previous()
         self.update_current(self.BOARD_SELECTION)
-        self.state_manager[self.BOARD_SELECTION] = True
 
     def board_selector_disable(self):
         if self.get_current() == self.BOARD_SELECTION:
             self.revert_state()
-            self.state_manager[self.BOARD_SELECTION] = False
 
     def board_loaded(self):
         self.update_previous()
         self.update_current(self.BOARD_LOADED)
-        self.state_manager[self.BOARD_LOADED] = True
+
+    def double_click_highlight(self):
+        self.update_previous()
+        self.update_current(self.DOUBLE_CLICK_HIGHLIGHT)
+
+    def double_click_restore(self):
+        self.revert_state()
 
     # def board_input(self):
     #     self.update_previous()
@@ -136,29 +146,17 @@ class StateManager:
     def solving_board_begin(self):
         self.update_previous()
         self.update_current(self.SOLVING_BOARD)
-        self.state_manager[self.SOLVING_BOARD] = True
 
     def solving_board_complete(self):
         if self.get_current() == self.SOLVING_BOARD:
             self.revert_state()
-            # self.state_manager[self.BOARD_LOADED] = False  todo ?
-
-    def aborted_solve(self):
-        self.state_manager[self.PREVIOUS] = self.BOARD_LOADED
-        self.update_current(self.ABORTED)
-        # self.state_manager[self.BOARD_LOADED] = False  todo ?
 
     def validate_board(self):
         if self.get_current() != self.VALIDATED:
             self.update_previous()
             self.update_current(self.VALIDATED)
 
-
-    # todo: not really using values... mostly just curr/prev strings... ? good?
-
-
-
-
+    # todo: mostly just curr/prev strings...
 
 
 
@@ -201,7 +199,7 @@ class SudokuApp:
         self.gui.initialize_num_selector_popup()
         self.gui.initialize_notes_panel()
         self.bindings()  # call last
-        self.gui.update_entire_board(self.gui.welcome_message, state_change=False)
+        self.gui.update_entire_board(self.gui.welcome_message)
 
         self.state = StateManager()
         self.all_board_references = self.gui.load_all_boards()
@@ -214,8 +212,8 @@ class SudokuApp:
         # todo: hold and drag Tkinter bug; have to code workaround or ignore
         # self.gui.bind("<Button-1>", self.event_handler)
         # self.gui.bind("<Button-3>", self.event_handler)
-        self.gui.bind("<Button-1>", self.event_handler_new)
-        self.gui.bind("<Button-3>", self.event_handler_new)
+        self.gui.bind("<Button-1>", self.event_handler)
+        self.gui.bind("<Button-3>", self.event_handler)
 
         shift_mb1 = self.INPUT['shift'] | self.INPUT['mouse-1']
         motion_shift_mb1 = shift_mb1 | self.INPUT['motion']
@@ -226,6 +224,8 @@ class SudokuApp:
         self.gui.bind("<Shift-B1-Motion>", lambda e: self.cell_select(e, motion_shift_mb1))
         self.gui.bind("<Shift-Button-3>", lambda e: self.cell_select(e, shift_mb3))
         self.gui.bind("<Shift-B3-Motion>", lambda e: self.cell_select(e, motion_shift_mb3))
+
+        self.gui.bind("<Double-Button-1>", self.double_click_cell_highlight)
 
         self.gui.bind("<Shift-KeyRelease>", self.shift_release)
         # self.gui.bind("<ButtonRelease-1>", self.event_handler)
@@ -298,7 +298,7 @@ class SudokuApp:
             # note: unable to use shift binds
             '<Alt-h>': lambda e: print('text containing help commands'),
             '<Alt-d>': lambda e: debug_debug_info(),
-            '<Alt-l>': lambda e: invert_color(self.gui.has_lock),
+            # '<Alt-l>': lambda e: invert_color(self.gui.has_lock),  # todo: deprecated; can use state manager .current..
             '<Alt-c>': lambda e: self.debugging_tools_change_obj_color(e, False),
             '<Alt-b>': lambda e: print(
                 u.strip_for_print([[cell.value for cell in row] for row in self.gui.board_gui_data])),  # noqa
@@ -369,6 +369,8 @@ class SudokuApp:
         i, j = self.gui.board_index_lookup.get(id_)
         if self.gui.board_gui_data[i][j].locked:  # exclude locked cells
             return
+        if self.gui.board_gui_data[i][j].value != 0:  # exclude populated cells
+            return
 
         fill = 'red'  # todo: appearance indicates error
         if bitflags & self.INPUT['mouse-1']:  # left mouse button
@@ -381,269 +383,61 @@ class SudokuApp:
         cell_id = self.gui.board_gui_data[i][j].cell_id
         self.gui.play_board.itemconfigure(cell_id, fill=fill)
 
+    # todo: review/remove (not working after refactor)
     def shift_release(self, e):
         if not self.cell_selection_queue:
             return
-
         self.gui.spawn_notes_panel()
 
-    # todo: consider refactor into separate fns
-    def event_handler(self, e):
-        """  """
-        """ employs an application state pattern """
-        """ motivation: organizational and clarity """
-        empty_board = self.gui.empty_board_button
-        easy_board = self.gui.easy_board_button
-        hard_board = self.gui.hard_board_button
-        gen_larger_clue = self.gui.random_easy_board_button
-        gen_smaller_clue = self.gui.random_medium_board_button
-        random_17 = self.gui.random_pick_17_board_button
-        boards = [empty_board, easy_board, hard_board, gen_larger_clue, gen_smaller_clue, random_17]
 
-        def convert_board():
-            """ convert to array of int arrays """
-            return [[cell.value for cell in row] for row in self.gui.board_gui_data]
-
-        def board_input(event):  # todo: this should only be called when board input (see below)
-            if not self.gui.board_loaded:
-                return
-            if self.state_solving:
-                return
-
-            board = event.widget  # play board OR num selector
-            x = event.x_root - board.winfo_rootx()  # todo: is this e.x?
-            y = event.y_root - board.winfo_rooty()  # todo: is this e.y?
-            cb = self.gui.play_board
-            offset = self.gui.offset / (self.gui.BOARD_SIZE - 1)  # canvas lines/cells offset
-
-            obj_ids = board.find_closest(x, y)
-            id_ = obj_ids[0]
-            tags = board.gettags(id_)
-
-            if self.mouse_in_play_area(e):  # todo: this shouldn't be necessary (see above)
-                i, j = self.gui.board_index_lookup.get(id_)
-            else:
-                return
-
-            # if a note was registered (vs cell) on delete command
-            if e.num == 3:
-                self.gui.limited_update([((i, j), 0)])
-                self.cell_selection_queue.pop((i, j))
-            # if board cell (or cell note) was selected
-            elif 'cell' in tags or 'note' in tags:
+    def double_click_cell_restore(self):
+        for i in range(9):
+            for j in range(9):
+                fill = self.gui.DEFAULT_CELL_COLOR
                 if self.gui.board_gui_data[i][j].locked:
-                    # ignore locked (loaded board) cells
-                    reset_ui_state()
-                # elif e.num == 3:  # and not self.gui.selected_cell:  # todo: move to fn?
-                #     # delete cell entry on right click
-                #     self.gui.limited_update([((i, j), 0)])
-                elif not self.cell_selection_queue:  # self.gui.selected_cell:
-                    # record cell and spawn number selector popup
-                    # self.gui.selected_cell = (i, j)  # todo: deprecated
-                    self.cell_selection_queue[(i, j)] = None
-                    self.gui.spawn_num_selector(i, j)
-                    self.gui.spawn_notes_panel()
-                    self.gui.has_lock = self.gui.play_board
-                    # shade selected cell
-                    highlight = self.gui.SELECT_HIGHLIGHT_COLOR
+                    fill = self.gui.LOCKED_CELL_FILL_COLOR
+                cell_id = self.gui.board_gui_data[i][j].cell_id
+                self.gui.play_board.itemconfigure(
+                    cell_id, fill=fill)
+
+    def double_click_cell_highlight(self, e):
+        # todo: move double click processing to 'event handler' ?
+
+        # todo: basically redoing what my redesign failed to address
+        if self.state.get_current() != self.state.BOARD_LOADED:
+            return
+
+        board = e.widget
+        if board != self.gui.play_board:
+            return
+
+        x, y = self.mouse_position_relative_to_obj(e, board)
+        obj_ids = board.find_closest(x, y)
+        id_ = obj_ids[0]
+        tags = board.gettags(id_)
+
+        if 'cell' not in tags:
+            return
+
+        i, j = self.gui.board_index_lookup.get(id_)
+        clicked_val = self.gui.board_gui_data[i][j].value
+        if clicked_val == 0:
+            return
+
+        for i in range(9):
+            for j in range(9):
+                if self.gui.board_gui_data[i][j].value == clicked_val:
                     cell_id = self.gui.board_gui_data[i][j].cell_id
-                    self.gui.play_board.itemconfigure(cell_id, fill=highlight)  # todo: move to gui  as fn?
-                else:
-                    reset_ui_state()
-            # if the num selector was selected
-            elif 'num' in tags:
-                print('num path')
-                val = self.gui.num_selector_lookup.get(id_)
-                cells_to_update = list()
-                for ij, v in self.cell_selection_queue.items():
-                    i, j = ij[0], ij[1]
-                    pb_obj_id = self.gui.board_gui_data[i][j].cell_id
-                    cb.itemconfigure(pb_obj_id, fill='#ffffff')  # todo:
-                    cells_to_update.append((ij, val))
-                self.gui.limited_update(cells_to_update)
-                self.gui.hide_notes_at_cell(i, j)
-            else:
-                reset_ui_state()
+                    self.gui.play_board.itemconfigure(
+                        cell_id, fill=self.gui.SELECT_HIGHLIGHT_COLOR)
 
-        # todo: refactor further ?; kept from old design
-        # todo: refactor matrix import into main
-        def board_selector(event):
-            from testing.test_cases import TestMatrices
+        self.state.double_click_highlight()  # todo: :(
 
-            board = TestMatrices().matrix_00()
-            if event.widget == self.gui.easy_board_button:
-                board = TestMatrices().matrix_01()
-            elif event.widget == self.gui.hard_board_button:
-                board = TestMatrices().matrix_11()  # hard
-            elif event.widget == self.gui.random_easy_board_button:
-                board = self.rg.generate_board(self.easy_clue_size, sec=3)
-                str_b = self.io.board_to_str(board)
-                logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
-            elif event.widget == self.gui.random_medium_board_button:
-                board = self.rg.generate_board(self.medium_clue_size, sec=3)
-                str_b = self.io.board_to_str(board)
-                logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
-            elif event.widget == self.gui.random_pick_17_board_button:
-                # board = matrix_library.steering_wheel_classic
-                board = self.io.read_and_load_board_from_17_hints_data_file()
-
-            self.gui.update_entire_board(board)
-            self.gui.lock_and_shade_cells(board)
-
-        def solve_board():
-            board_data = convert_board()
-            generator_solver = self.se.solve_board(board_data)
-
-            for next_limited_update in generator_solver:
-                if self.abort:
-                    # generator_solver.send('stop')
-                    self.abort = False
-                    break
-
-                if not next_limited_update:
-                    break
-                self.gui.limited_update(next_limited_update)
-                self.gui.update()
-
-        # todo: keep validation result until board state changes
-        # todo: probably refactor (eg board_state_change confusing)
-        def click_solve():
-            if self.gui.solve_button['state'] == tk.DISABLED:
-                return
-            if self.gui.solve_button.cget('text') == 'SOLVE':
-                self.gui.select_board_menu_container.place_forget()
-                self.gui.solve_button.config(text='ABORT?')
-                self.gui.verify_button['state'] = tk.DISABLED
-                self.gui.select_button['state'] = tk.DISABLED
-                self.state_solving = True
-                solve_board()
-                self.gui.solve_button.config(text='SOLVE')
-                self.gui.solve_button['state'] = tk.DISABLED
-                self.state_solving = False
-                self.gui.select_button['state'] = tk.NORMAL
-                self.gui.verify_button['state'] = tk.NORMAL
-                self.gui.board_loaded = False
-                verify()
-                self.gui.board_state_change = False
-            else:  # solve_button.cget('text') == 'ABORT?'
-                self.abort = True
-                self.gui.verify_button['state'] = tk.DISABLED
-
-        # to do: separate gui verify state
-        def verify():
-            se = SolverEngine()
-
-            if se.validate_board(convert_board()):
-                self.gui.title_label.config(
-                    text='VALIDATED!',
-                    width=len(self.gui.title_text))
-                # self.gui.verify_button['state'] = tk.DISABLED
-                self.gui.title_label.config(bg='#53ec53')
-                self.gui.solve_button['state'] = tk.DISABLED
-            else:
-                self.gui.title_label.config(
-                    text='invalid :(',
-                    width=len(self.gui.title_text))
-                self.gui.title_label.config(bg='#ec5353')
-            self.gui.verify_button['state'] = tk.DISABLED
-
-        def reset_ui_state():
-            self.gui.select_board_menu_container.place_forget()
-            self.gui.notes_panel_container.place_forget()
-            self.gui.num_selector_popup.place_forget()
-
-            restore_color = self.gui.DEFAULT_CELL_COLOR
-            for ij, v in self.cell_selection_queue.items():
-                cell_id = self.gui.board_gui_data[ij[0]][ij[1]].cell_id
-                self.gui.play_board.itemconfigure(cell_id, fill=restore_color)
-
-            self.cell_selection_queue = dict()
-            self.gui.has_lock = None
-
-        # if e.num == 2:
-        #     self.debugging_tools_change_obj_color(e)
-        #     return
-
-        # todo: control flow outer
-        if e.widget in self.gui.note_buttons:
-            for ij, v in self.cell_selection_queue.items():
-                i, j = ij[0], ij[1]
-                num = int(e.widget.cget('text'))
-                note_id = self.gui.board_gui_data[i][j].note_ids[num]
-                self.gui.play_board.itemconfigure(note_id, state=tk.NORMAL)
-
-        # clears, on any input, valid/invalid results
-        if self.gui.title_label.cget('text') != self.gui.title_text:
-            self.gui.title_label.config(text=self.gui.title_text, bg='#ffffff')
-
-        if e.widget in [self.gui.play_board, self.gui.num_selector_popup]:
-            # todo: handling same types of things in different places
-            # todo: handling same types of things in different places
-
-            """ handles board user entry """
-            # ~ self.gui.select_board_menu_container.winfo_viewable():
-            if self.gui.has_lock in [None, self.gui.play_board]:
-                board_input(e)
-            else:
-                reset_ui_state()  # todo: review
-
-        elif e.widget == self.gui.select_button:
-            """ spawns difficulty menu after clicking 'select' """
-            if self.gui.select_button['state'] == tk.DISABLED:
-                return
-
-            # does not have lock
-            if self.gui.has_lock != self.gui.select_board_menu_container:
-                # other has lock
-                if self.gui.has_lock is not None:
-                    reset_ui_state()
-                """ place() doesn't work without arguments ??? """
-                """ even if place(*args) is called at creation """
-                p_rows = 4
-                self.gui.select_board_menu_container.place(
-                    relx=.5, rely=.5, width=400, height=60 * p_rows, anchor=tk.CENTER)
-                self.gui.has_lock = self.gui.select_board_menu_container
-            # ~ self.gui.select_board_menu_container.winfo_viewable():
-            elif self.gui.select_board_menu_container == self.gui.has_lock:
-                reset_ui_state()
-        elif e.widget in boards:
-            board_selector(e)
-            self.gui.solve_button['state'] = tk.NORMAL
-            self.gui.verify_button['state'] = tk.NORMAL
-            self.gui.board_loaded = True
-            reset_ui_state()
-
-        elif e.widget == self.gui.solve_button:
-            if self.gui.has_lock:
-                return
-            click_solve()
-        elif e.widget == self.gui.verify_button:
-            if not self.gui.board_loaded:
-                return
-            if self.gui.has_lock or self.state_solving:
-                return
-            if self.gui.verify_button['state'] == tk.NORMAL:
-                verify()
-
-        # todo: this was created as a sentinel for the title, but is misused in the click_solve() code...
-        if self.gui.board_state_change:
-            """ restores title to original state on any user input """
-            self.gui.title_label.config(text=self.gui.title_text, bg='#ffffff')
-            self.gui.board_state_change = False
-
-            self.gui.verify_button['state'] = tk.NORMAL
-
-        self.gui.update()
-
-    def event_handler_new(self, e):
+    # todo: this design was probably a bad idea... :(
+    def event_handler(self, e):
         """ states constrain an event driven process """
         state = self.state
         gui = self.gui
-
-        # todo: move to fn?
-        # clears, on any input, valid/invalid results
-        if self.gui.title_label.cget('text') != self.gui.title_text:
-            self.gui.title_label.config(text=self.gui.title_text, bg='#ffffff')
 
         # welcome state                                                  # noqa
         if state.get_current() == state.WELCOME:
@@ -671,6 +465,8 @@ class SudokuApp:
                 state.solving_board_begin()
                 self.execute_solve_state()
                 state.solving_board_complete()
+                self.verify_board()
+                state.update_current(state.VALIDATED)
             # verify button
             elif e.widget == gui.verify_button:
                 state.validate_board()
@@ -685,34 +481,22 @@ class SudokuApp:
             # notes input
             elif e.widget in self.gui.note_buttons:
                 self.board_input_notes(e)
+        # double click highlight state
+        elif state.get_current() == state.DOUBLE_CLICK_HIGHLIGHT:
+            self.double_click_cell_restore()
+            self.state.double_click_restore()
         # solving board state
         elif state.get_current() == state.SOLVING_BOARD:
             # solve button (transformed into "abort" button)
             if e.widget == gui.solve_button:
-                state.aborted_solve()
-        # aborted state
-        elif state.get_current() == state.ABORTED:
-            # select button
-            if e.widget == gui.select_button:
-                gui.spawn_board_selector()
-                state.board_selector_enable()
+                state.revert_state()
         # board validated/invalidated
-        elif state.get_current() == state.VALIDATED:  # todo: time between validation and validated?
-            # select button
-            if e.widget == gui.select_button:
-                gui.spawn_board_selector()
-                state.board_selector_enable()
-            # solve button
-            elif e.widget == gui.solve_button:
-                state.solving_board_begin()
-                self.execute_solve_state()
-                state.solving_board_complete()
-            # verify button
-            elif e.widget == gui.verify_button:
-                state.validate_board()
-                self.verify_board()
-
-
+        elif state.get_current() == state.VALIDATED:
+            # clears, on any input, valid/invalid results
+            if e.widget != gui.verify_button:
+                if self.gui.title_label.cget('text') != self.gui.title_text:
+                    self.gui.title_label.config(text=self.gui.title_text, bg='#ffffff')
+                    state.board_loaded()
 
 
     def select_board(self, e):
@@ -757,6 +541,9 @@ class SudokuApp:
                 self.gui.limited_update([((i, j), 0)])
                 self.gui.hide_notes_at_cell(i, j)
                 self.cell_selection_queue.pop((i, j), 0)
+            # ignore already populated cells
+            elif self.gui.board_gui_data[i][j].value != 0:
+                self.reset_ui_state()
             # if there is currently no selection
             elif not self.cell_selection_queue:  # self.gui.selected_cell:
                 # record cell and spawn number selector popup
@@ -795,7 +582,7 @@ class SudokuApp:
             note_id = self.gui.board_gui_data[i][j].note_ids[num]
             self.gui.play_board.itemconfigure(note_id, state=tk.NORMAL)
 
-
+    # todo: refactor button states (enable/disable color)
     def execute_solve_state(self):  # todo: consider renaming
         if self.gui.solve_button['state'] == tk.DISABLED:
             return
@@ -811,11 +598,7 @@ class SudokuApp:
             self.state_solving = False
             self.gui.select_button['state'] = tk.NORMAL
             self.gui.verify_button['state'] = tk.NORMAL
-            self.gui.board_loaded = False
-            # verify()  # todo: implement
-            self.gui.board_state_change = False
         else:  # solve_button.cget('text') == 'ABORT?'
-            self.abort = True  # todo:
             self.gui.verify_button['state'] = tk.DISABLED
 
     def solve_board(self):
@@ -824,7 +607,7 @@ class SudokuApp:
 
         self.gui.hide_all_notes()
         for next_limited_update in generator_solver:
-            if self.state.get_current() == self.state.ABORTED:
+            if self.state.get_current() != self.state.SOLVING_BOARD:
                 # generator_solver.send('stop')
                 self.state.revert_state()
                 break
@@ -845,7 +628,7 @@ class SudokuApp:
                 width=len(self.gui.title_text))
             # self.gui.verify_button['state'] = tk.DISABLED
             self.gui.title_label.config(bg='#53ec53')
-            self.gui.solve_button['state'] = tk.DISABLED
+            # self.gui.solve_button['state'] = tk.DISABLED
         else:
             self.gui.title_label.config(
                 text='invalid :(',
@@ -872,6 +655,7 @@ class SudokuApp:
             self.gui.play_board.itemconfigure(cell_id, fill=restore_color)
 
         self.cell_selection_queue = dict()
+        self.double_click_cell_restore()
 
     def run(self):
         self.gui.mainloop()
@@ -919,6 +703,12 @@ class SudokuApp:
                 x_b = x - self.gui.play_board.winfo_x()
                 y_b = y - self.gui.play_board.winfo_y()
                 obj_ids = self.gui.play_board.find_closest(x_b, y_b)
+                i, j = self.gui.board_index_lookup[obj_ids[0]]
+                print(i, j)
+                print('obj_ids', obj_ids)
+                print(self.gui.board_gui_data[i][j])
+
+
         obj_tags = ()
         if hasattr(widget, 'gettags'):
             obj_tags = widget.gettags("current")
