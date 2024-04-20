@@ -81,13 +81,13 @@ class FileIO:
         return self.convert_from_formatted_str(board_save_data)
 
     def convert_to_formatted_str(self, board_to_convert):
-        return self._board_to_str(board_to_convert)
+        return self.board_to_str(board_to_convert)
 
     def convert_from_formatted_str(self, save_data):
-        return self._str_to_board(save_data)
+        return self.str_to_board(save_data)
 
     @staticmethod
-    def _board_to_str(board):
+    def board_to_str(board):
         """ converts from array format to string format """
         n, m = len(board), len(board[0])
         to_str = list()
@@ -101,7 +101,7 @@ class FileIO:
         return to_str
 
     @staticmethod
-    def _str_to_board(str_data) -> list[list[int]]:
+    def str_to_board(str_data) -> list[list[int]]:
         """ converts from string format to array format """
         n = m = 9  # assumes 9 by 9
 
