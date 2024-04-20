@@ -13,7 +13,7 @@ class TestMatrices:
         return test_matrix
 
     @staticmethod
-    def matrix_01():
+    def matrix_01():  # 'easy' board
         test_matrix = [[5, 0, 2, 0, 9, 0, 7, 8, 6],
                        [9, 0, 3, 0, 6, 0, 5, 0, 0],
                        [6, 7, 1, 8, 0, 0, 3, 2, 9],
@@ -67,7 +67,7 @@ class TestMatrices:
 
     # 17 element with solution
     @staticmethod
-    def matrix_11():
+    def matrix_11():  # 'hard' board good for dfs demo
         test_matrix = [[0, 0, 0, 7, 0, 0, 0, 0, 0],
                        [1, 0, 0, 0, 0, 0, 0, 0, 0],
                        [0, 0, 0, 4, 3, 0, 2, 0, 0],
