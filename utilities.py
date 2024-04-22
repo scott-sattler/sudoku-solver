@@ -106,3 +106,25 @@ if __name__ == '__main__':
     print(rgb_hex_to_int('808080'))
     print(rgb_hex_to_int('000000'))
     # print(rgb_hex_to_int('00000'))
+
+    from tkinter import *
+    from tkinter import ttk
+    import tkinter as tk
+
+    root = Tk()
+    frm = tk.Frame(root)
+    frm.grid()
+
+    for i in range(91):
+        size = i
+        label = tk.Label(frm)
+        text = f'Foo{size}'
+        label.config(
+            text=text, font=('fixedsys', size),
+            anchor=tk.NW,
+            justify=tk.CENTER
+        )
+        cols = 7
+        label.grid(row=i//cols, column=i%cols, padx=10)
+
+    root.mainloop()
