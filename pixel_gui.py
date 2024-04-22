@@ -103,6 +103,16 @@ class PixelGUI(tk.Tk):
             [0, 0, 0, 0, 0, 0, 0, 0, 0],
         ]
 
+    def load_all_boards(self):
+        all_boards = [
+            self.empty_board_button,
+            self.easy_board_button,
+            self.hard_board_button,
+            self.random_easy_board_button,
+            self.random_medium_board_button,
+            self.random_pick_17_board_button,
+        ]
+        return all_boards
 
     def initialize_title(self):
         self.title_container = tk.Canvas(self.container)
@@ -287,10 +297,7 @@ class PixelGUI(tk.Tk):
             # width=self.title_container.winfo_reqwidth(),
             height=self.CELL_SIZE,
             bg=self.DEFAULT_COLOR)
-        self.control_panel_container.pack(
-            fill=tk.BOTH, side=tk.BOTTOM, pady=(0, 30),
-            after=self.play_board
-        )
+        self.control_panel_container.pack(fill=tk.BOTH, side=tk.BOTTOM, pady=(5, 5))
 
         # solve, verify, and select buttons
         c_p_c = self.control_panel_container  # buttons parent
@@ -433,22 +440,18 @@ class PixelGUI(tk.Tk):
             # height=self.CELL_SIZE,
             bg=self.DEFAULT_COLOR,
         )
+        self.board_input_panel_container.pack()
 
         self.initialize_number_panel()
         self.initialize_notes_panel()
-        # self.board_input_panel_container.lift()
 
-    def load_all_boards(self):
-        all_boards = [
-            self.empty_board_button,
-            self.easy_board_button,
-            self.hard_board_button,
-            self.random_easy_board_button,
-            self.random_medium_board_button,
-            self.random_pick_17_board_button,
-        ]
-        return all_boards
+    def show_board_selector(self):
+        p_rows = 4  # todo
+        self.select_board_menu_container.place(
+            relx=.5, rely=.5, width=400, height=60 * p_rows, anchor=tk.CENTER)
 
+    def hide_board_selector(self):
+        self.select_board_menu_container.place_forget()
 
     def lock_and_shade_cells(self, board_to_shade):
         """ locks and colors cells dark """
@@ -499,14 +502,83 @@ class PixelGUI(tk.Tk):
                 self.play_board.itemconfig(text_id, text=number)
                 self.hide_all_notes_at_cell(i, j)
 
-    def show_board_selector(self):
-        p_rows = 4  # todo
-        self.select_board_menu_container.place(
-            relx=.5, rely=.5, width=400, height=60 * p_rows, anchor=tk.CENTER)
+    def shade_as_selected_cells(self, selected_cells):
+        highlight = self.SELECT_HIGHLIGHT_COLOR
+        for i, j in selected_cells:
+            cell_id = self.board_gui_data[i][j].cell_id
+            self.play_board.itemconfigure(cell_id, fill=highlight)
 
-    def hide_board_selector(self):
-        self.select_board_menu_container.place_forget()
+    def reset_colors_of_selected_cells(self, selected_cells):
+        restore_color = self.DEFAULT_CELL_COLOR
+        for i, j in selected_cells:
+            cell_id = self.board_gui_data[i][j].cell_id
+            self.play_board.itemconfigure(cell_id, fill=restore_color)
 
+    def reset_colors_of_all_cells(self):
+        for i in range(9):
+            for j in range(9):
+                fill = self.DEFAULT_CELL_COLOR
+                if self.board_gui_data[i][j].locked:
+                    fill = self.LOCKED_CELL_FILL_COLOR
+                cell_id = self.board_gui_data[i][j].cell_id
+                self.play_board.itemconfigure(
+                    cell_id, fill=fill)
+
+    def hide_invalid_notes_after_entry(self, i, j, val=None):
+        """ given the cell (i, j), remove all invalid notes (sqr and hv) """
+        # get top left corner of 3x3 square
+        i_0 = i - (i % 3)
+        j_0 = j - (j % 3)
+        board_val = val
+        if val is None:
+            board_val = self.board_gui_data[i][j].value
+
+        for k in range(3):
+            for l in range(3):
+                note_id = self.board_gui_data[i_0 + k][j_0 + l].note_ids[board_val]
+                self.play_board.itemconfigure(note_id, state=tk.HIDDEN)
+
+        for e in range(9):
+            note_id = self.board_gui_data[e][j].note_ids[board_val]
+            self.play_board.itemconfigure(note_id, state=tk.HIDDEN)
+            note_id = self.board_gui_data[i][e].note_ids[board_val]
+            self.play_board.itemconfigure(note_id, state=tk.HIDDEN)
+
+    def hide_all_notes_at_cell(self, i, j):
+        """ hides all notes taken at cell (i, j) """
+        for k in range(1, 10):
+            n_id = self.board_gui_data[i][j].note_ids[k]
+            self.play_board.itemconfigure(n_id, state=tk.HIDDEN)
+
+    def hide_all_notes_everywhere(self):
+        """ hides all notes taken in all cells """
+        for i in range(9):
+            for j in range(9):
+                for k in range(1,10):
+                    n_id = self.board_gui_data[i][j].note_ids[k]
+                    self.play_board.itemconfigure(n_id, state=tk.HIDDEN)
+
+    # todo: broken from refactor
+    def toggle_color(self):
+        """ easter-egg that allows colorized components """
+        self.cell_colors = not self.cell_colors
+
+        # recolor number selector popup
+        count = 0
+        for id_, val in self.num_selector_lookup.items():
+            tags = self.num_selector_popup.itemcget(id_, "tags")
+            if 'backdrop' not in tags:
+                continue
+            fill = '#ffffff'
+            if self.cell_colors:
+                fill = self.fill[count]
+                count += 1
+            self.num_selector_popup.itemconfigure(id_, fill=fill)
+
+    ###########################################################################
+    # deprecated and debugging tools below
+
+    # todo: deprecated
     def spawn_num_selector(self, i, j):
         board_width = self.play_board.winfo_width()
         board_height = self.play_board.winfo_height()
@@ -534,6 +606,7 @@ class PixelGUI(tk.Tk):
 
         self.num_selector_popup.place(relx=x_rel, rely=y_rel, anchor=anchor)
 
+    # todo: deprecated
     def show_board_input_panel(self):
         self.board_input_panel_container.place(
             # relx=.5, rely=.94, width=490, height=60, anchor=tk.CENTER)
@@ -543,50 +616,3 @@ class PixelGUI(tk.Tk):
     def show_notes_panel(self):  # todo: deprecated
         self.notes_panel_container.place(
             relx=.5, rely=.94, width=490, height=60, anchor=tk.CENTER)
-
-    def hide_all_notes(self):
-        """ hides all notes taken in all cells """
-        for i in range(9):
-            for j in range(9):
-                for k in range(1,10):
-                    n_id = self.board_gui_data[i][j].note_ids[k]
-                    self.play_board.itemconfigure(n_id, state=tk.HIDDEN)
-
-    def hide_all_notes_at_cell(self, i, j):
-        """ hides all notes taken at cell (i, j) """
-        for k in range(1, 10):
-            n_id = self.board_gui_data[i][j].note_ids[k]
-            self.play_board.itemconfigure(n_id, state=tk.HIDDEN)
-
-    def remove_invalid_notes(self, i, j):
-        """ given the cell (i, j), remove all invalid notes (sqr and hv) """
-        # get top left corner of 3x3 square
-        i_0 = i - (i % 3)
-        j_0 = j - (j % 3)
-        board_val = self.board_gui_data[i][j].value
-        for k in range(3):
-            for l in range(3):
-                note_id = self.board_gui_data[i_0 + k][j_0 + l].note_ids[board_val]
-                self.play_board.itemconfigure(note_id, state=tk.HIDDEN)
-
-        for e in range(9):
-            note_id = self.board_gui_data[e][j].note_ids[board_val]
-            self.play_board.itemconfigure(note_id, state=tk.HIDDEN)
-            note_id = self.board_gui_data[i][e].note_ids[board_val]
-            self.play_board.itemconfigure(note_id, state=tk.HIDDEN)
-
-
-    def toggle_color(self):
-        self.cell_colors = not self.cell_colors
-
-        # recolor number selector popup
-        count = 0
-        for id_, val in self.num_selector_lookup.items():
-            tags = self.num_selector_popup.itemcget(id_, "tags")
-            if 'backdrop' not in tags:
-                continue
-            fill = '#ffffff'
-            if self.cell_colors:
-                fill = self.fill[count]
-                count += 1
-            self.num_selector_popup.itemconfigure(id_, fill=fill)

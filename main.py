@@ -196,29 +196,21 @@ class SudokuApp:
         self.se = SolverEngine()
         self.rg = BoardOperations(self.board_width, self.board_height)
         self.io = FileIO()
+        self.state = StateManager()
 
         # order of execution dependent
         self.gui.initialize_title()
         self.gui.initialize_play_board()
+        self.gui.initialize_board_input_panel()
         self.gui.initialize_control_panel()
         self.gui.initialize_board_selector_menu()
         # self.gui.initialize_num_selector_popup()
         # self.gui.initialize_notes_panel()
-
-        # todo: two diff panels, contained in same parent?
-        self.gui.initialize_board_input_panel()
-        # self.gui.container.lift(self.gui.board_input_panel_container)
-
-
         self.bindings()  # call last
-        self.gui.update_entire_board(self.gui.welcome_message)
 
-        self.state = StateManager()
         self.all_board_references = self.gui.load_all_boards()
 
-        self.state_solving = False  # todo: remove
-
-        print(self.gui.container.winfo_vrootwidth())
+        self.gui.update_entire_board(self.gui.welcome_message)
 
 
     def bindings(self):
@@ -241,7 +233,7 @@ class SudokuApp:
 
         # self.gui.bind("<Double-Button-1>", self.cell_highlight)
 
-        self.gui.bind("<Shift-KeyRelease>", self.shift_release)
+        # self.gui.bind("<Shift-KeyRelease>", self.shift_release)
         # self.gui.bind("<ButtonRelease-1>", self.event_handler)
         # self.gui.bind("<Button-2>", self.event_handler)
 
@@ -398,30 +390,13 @@ class SudokuApp:
             fill = self.gui.DEFAULT_CELL_COLOR
             self.cell_selection_queue.pop((i, j), 0)
 
+        # shades and un-shades cells
         cell_id = self.gui.board_gui_data[i][j].cell_id
         self.gui.play_board.itemconfigure(cell_id, fill=fill)
-
-    # todo: review/remove (not working after refactor)
-    def shift_release(self, e):
-        if not self.cell_selection_queue:
-            return
-        self.gui.show_notes_panel()
-
-
-    def all_cell_restore(self):
-        for i in range(9):
-            for j in range(9):
-                fill = self.gui.DEFAULT_CELL_COLOR
-                if self.gui.board_gui_data[i][j].locked:
-                    fill = self.gui.LOCKED_CELL_FILL_COLOR
-                cell_id = self.gui.board_gui_data[i][j].cell_id
-                self.gui.play_board.itemconfigure(
-                    cell_id, fill=fill)
+        # self.gui.shade_as_selected_cells([(i, j)])  # this only shades
 
     def cell_highlight(self, e):
-        # todo: move double click processing to 'event handler' ?
-
-        # todo: basically redoing what my redesign failed to address
+        """ of selected number, highly all appearances of that number """
         if self.state.get_current() != self.state.BOARD_LOADED:
             return
 
@@ -448,8 +423,6 @@ class SudokuApp:
                     cell_id = self.gui.board_gui_data[i][j].cell_id
                     self.gui.play_board.itemconfigure(
                         cell_id, fill=self.gui.SELECT_HIGHLIGHT_COLOR)
-
-        self.state.double_click_highlight()  # todo: :(
 
     # todo: this design was probably a bad idea... :(
     def event_handler(self, e):
@@ -502,11 +475,6 @@ class SudokuApp:
             # notes input
             elif e.widget in self.gui.note_buttons:
                 self.board_input_notes(e)
-        # double click highlight state
-        elif state.get_current() == state.DOUBLE_CLICK_HIGHLIGHT:
-            self.all_cell_restore()
-            self.state.double_click_restore()
-        # solving board state
         elif state.get_current() == state.SOLVING_BOARD:
             # solve button (transformed into "abort" button)
             if e.widget == gui.solve_button:
@@ -550,57 +518,57 @@ class SudokuApp:
         id_ = obj_ids[0]
         tags = board.gettags(id_)
 
-        print('foo')
-
         # if board cell (or cell note) was selected
         if 'cell' in tags or 'note' in tags:
             i, j = self.gui.board_index_lookup.get(id_)
             # highlight already populated cells
             if e.num != 3 and self.gui.board_gui_data[i][j].value != 0:
-                self.all_cell_restore()
+                self.gui.reset_colors_of_all_cells()
+                self.cell_selection_queue = dict()
                 self.cell_highlight(e)
             # if a note or cell was registered on delete command
             elif e.num == 3:
                 i, j = self.gui.board_index_lookup.get(id_)
-                self.gui.limited_update([((i, j), 0)])
-                self.gui.hide_all_notes_at_cell(i, j)
-                self.cell_selection_queue.pop((i, j), 0)
-            # if there is currently no selection
-            elif not self.cell_selection_queue:  # self.gui.selected_cell:
+                # if a cell is selected, act as a deselect (state reset)
+                if self.cell_selection_queue:
+                    self.reset_ui_state()
+                elif not self.gui.board_gui_data[i][j].locked:
+                    self.gui.reset_colors_of_all_cells()
+                    self.gui.limited_update([((i, j), 0)])
+                    self.gui.hide_all_notes_at_cell(i, j)
+                    self.cell_selection_queue.pop((i, j), 0)
+                else:
+                    self.reset_ui_state()
+            # if the current selection is one or no cells
+            elif len(self.cell_selection_queue) < 2:  # self.gui.selected_cell:
+                # restore selected cell
+                if len(self.cell_selection_queue) == 1:
+                    # selected_cells = self.cell_selection_queue.keys()
+                    # self.gui.reset_selected_cell_colors(selected_cells)
+                    self.cell_selection_queue = dict()
+                self.gui.reset_colors_of_all_cells()
                 # record cell and spawn number selector popup
                 self.cell_selection_queue[(i, j)] = None
-                # self.gui.spawn_num_selector(i, j)
-                # self.gui.show_notes_panel()
-                self.gui.show_board_input_panel()
                 # shade selected cell
-                highlight = self.gui.SELECT_HIGHLIGHT_COLOR
-                cell_id = self.gui.board_gui_data[i][j].cell_id
-                self.gui.play_board.itemconfigure(cell_id, fill=highlight)  # todo: move to gui  as fn?
+                self.gui.shade_as_selected_cells([(i, j)])
             else:
                 self.reset_ui_state()
-        # todo: deprecated
-        # if the num selector was selected
-        elif 'num' in tags:
-            val = self.gui.num_selector_lookup.get(id_)
-            cells_to_update = list()
-            for ij, v in self.cell_selection_queue.items():
-                i, j = ij[0], ij[1]
-                pb_obj_id = self.gui.board_gui_data[i][j].cell_id
-                self.gui.play_board.itemconfigure(pb_obj_id, fill=self.gui.DEFAULT_CELL_COLOR)  # todo:
-                cells_to_update.append((ij, val))
-            self.gui.limited_update(cells_to_update)
-            self.gui.hide_all_notes_at_cell(i, j)
-            self.gui.remove_invalid_notes(i, j)
-            self.reset_ui_state()  # todo
         else:
             self.reset_ui_state()
 
     def board_input_numbers(self, e):
         selected_value = e.widget.cget('text')
         val = int(selected_value)
-        ijs = self.cell_selection_queue.keys()
-        cells_to_update = [(ij, val) for ij in ijs]
+        cells_to_update = list()
+        for i, j in self.cell_selection_queue.keys():
+            cells_to_update.append(((i, j), val))
+            # self.gui.limited_update([((i, j), val)])
+            self.gui.hide_all_notes_at_cell(i, j)
+            self.gui.hide_invalid_notes_after_entry(i, j, val)
+
         self.gui.limited_update(cells_to_update)
+        self.gui.reset_colors_of_selected_cells(self.cell_selection_queue.keys())
+        self.cell_selection_queue = dict()
 
     def board_input_notes(self, e):
         for ij, v in self.cell_selection_queue.items():
@@ -634,7 +602,7 @@ class SudokuApp:
         board_data = self.convert_board()
         generator_solver = self.se.solve_board(board_data)
 
-        self.gui.hide_all_notes()
+        self.gui.hide_all_notes_everywhere()
         for next_limited_update in generator_solver:
             if self.state.get_current() != self.state.SOLVING_BOARD:
                 # generator_solver.send('stop')
@@ -669,6 +637,7 @@ class SudokuApp:
         """ convert to array of int arrays """
         return [[cell.value for cell in row] for row in self.gui.board_gui_data]
 
+
     # todo: review
     def reset_ui_state(self):  # todo: specify state to reset to
         self.gui.solve_button['state'] = tk.NORMAL
@@ -679,13 +648,11 @@ class SudokuApp:
         # self.gui.num_selector_popup.place_forget()
         self.gui.board_input_panel_container.place_forget()
 
-        restore_color = self.gui.DEFAULT_CELL_COLOR
-        for ij, v in self.cell_selection_queue.items():
-            cell_id = self.gui.board_gui_data[ij[0]][ij[1]].cell_id
-            self.gui.play_board.itemconfigure(cell_id, fill=restore_color)
+        selected_cells = self.cell_selection_queue.keys()
+        self.gui.reset_colors_of_selected_cells(selected_cells)
 
         self.cell_selection_queue = dict()
-        self.all_cell_restore()
+        self.gui.reset_colors_of_all_cells()
 
     def run(self):
         self.gui.mainloop()
