@@ -93,25 +93,10 @@ def str_to_board(str_data) -> list[list[int]]:
     return reconstructed
 
 
-if __name__ == '__main__':
-    print(strip_for_print(matrix_01()))
-    print(pretty_print(matrix_01()))
-    print(rgb_hex_to_int('#ffffff'))
-    print(rgb_hex_to_int('#808080'))
-    print(rgb_hex_to_int('#000000'))
-    print(rgb_hex_to_int('0xffffff'))
-    print(rgb_hex_to_int('0x808080'))
-    print(rgb_hex_to_int('0x000000'))
-    print(rgb_hex_to_int('ffffff'))
-    print(rgb_hex_to_int('808080'))
-    print(rgb_hex_to_int('000000'))
-    # print(rgb_hex_to_int('00000'))
-
-    from tkinter import *
-    from tkinter import ttk
+def font_preview():
     import tkinter as tk
 
-    root = Tk()
+    root = tk.Tk()
     frm = tk.Frame(root)
     frm.grid()
 
@@ -128,3 +113,19 @@ if __name__ == '__main__':
         label.grid(row=i//cols, column=i%cols, padx=10)
 
     root.mainloop()
+
+
+if __name__ == '__main__':
+    print(strip_for_print(matrix_01()))
+    print(pretty_print(matrix_01()))
+    print(rgb_hex_to_int('#ffffff'))
+    print(rgb_hex_to_int('#808080'))
+    print(rgb_hex_to_int('#000000'))
+    print(rgb_hex_to_int('0xffffff'))
+    print(rgb_hex_to_int('0x808080'))
+    print(rgb_hex_to_int('0x000000'))
+    print(rgb_hex_to_int('ffffff'))
+    print(rgb_hex_to_int('808080'))
+    print(rgb_hex_to_int('000000'))
+    # print(rgb_hex_to_int('00000'))
+    font_preview()
