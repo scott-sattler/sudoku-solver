@@ -10,4 +10,4 @@ I have not yet employed DLX (Algorithm X; or dancing links), so the performance 
 
 Contains most of the functionality you would find in a typical Sudoku application -- despite the title remaining the same (a work in progress ;-)).
 
-![screenie](https://github.com/scott-sattler/sudoku-solver/blob/main/screenshots/SudokuAppv.15.png)
+![screenshot](https://github.com/scott-sattler/sudoku-solver/blob/main/screenshots/SudokuAppv.15.png)
