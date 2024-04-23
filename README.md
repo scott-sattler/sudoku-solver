@@ -10,4 +10,7 @@ I have not yet employed DLX (Algorithm X; or dancing links), so the performance 
 
 Contains most of the functionality you would find in a typical Sudoku application -- despite the title remaining the same (a work in progress ;-)).
 
-![screenshot](https://github.com/scott-sattler/sudoku-solver/blob/34f2165ed8903da8d22e663472a8e7266ede75a8/screenshots/readme_image.png)
+
+<div align="center">
+    <img width="50%" src="https://github.com/scott-sattler/sudoku-solver/blob/34f2165ed8903da8d22e663472a8e7266ede75a8/screenshots/readme_image.png">
+</div>
