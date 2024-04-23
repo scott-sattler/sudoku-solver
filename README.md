@@ -13,5 +13,7 @@ I have not yet employed DLX (Algorithm X; or dancing links), so the performance 
 The application currently contains most of the functionality you would find in a typical Sudoku application, despite the title remaining unchanged.
 
 <div align="center">
-    <img width="50%" src="https://github.com/scott-sattler/sudoku-solver/blob/34f2165ed8903da8d22e663472a8e7266ede75a8/screenshots/readme_image.png">
+    <img width="33%" src="https://github.com/scott-sattler/sudoku-solver/blob/58a964767b7cfa62e57f8bbf8a735fd21e658af4/screenshots/readme_image_1.png">
+    <img width="33%" src="https://github.com/scott-sattler/sudoku-solver/blob/58a964767b7cfa62e57f8bbf8a735fd21e658af4/screenshots/readme_image_2.png">
+    <img width="33%" src="https://github.com/scott-sattler/sudoku-solver/blob/58a964767b7cfa62e57f8bbf8a735fd21e658af4/screenshots/readme_image_3.png">
 </div>
