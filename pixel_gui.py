@@ -1,6 +1,6 @@
 import tkinter as tk
 import tempfile
-from class_cell_data import CellData
+from custom_classes import CellData
 
 
 ICON = (b'\x00\x00\x01\x00\x01\x00\x10\x10\x00\x00\x01\x00\x08\x00h\x05\x00\x00'
