@@ -2,7 +2,9 @@
 
 ~~older project. proof of concept. got bored (neither sufficiently novel nor difficult).~~
 
-Very old project I got sucked into while trying to reuse the UI for a friend. I eneded up rewriting most of it, and adding a lot of features. I really like building things (though do need to be mindful with time allocation!
+So-called "Sudoku Solver" is a very old project I got sucked into while trying to repurpose the UI. I ended up deciding to not reuse the UI (partly due to concerns with Tkinter), rewrote/refactored virtually everything, and added many expected features along the way.
+
+Although I do not actually play much Sudoku, I thoroughly enjoy building things!
 
 I have not yet employed DLX (Algorithm X; or dancing links), so the performance suffers accordingly.
 
