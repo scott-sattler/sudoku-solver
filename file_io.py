@@ -8,7 +8,7 @@ class FileIO:
     DATA_FILE_NAME = '17puz49158.txt'
     SAVE_FILE_NAME = 'sudoku_save'
     BOARD_DATA_SENTINEL_VALUE = 'board_data:'
-    CLUE_17_SENTINEL_VALUE = '_17_hint_set: '
+    CLUE_17_SENTINEL_VALUE = '_17_clue_set: '
 
     def __init__(self, local_save_path='./', save_file_name=SAVE_FILE_NAME):
         self.save_path = local_save_path
