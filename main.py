@@ -70,6 +70,9 @@ class SudokuApp:
 
         self.gui.bind("<c>", lambda e: self.gui.toggle_color())
 
+        self.gui.bind("<s>", lambda e: self.save_state_data())
+        self.gui.bind("<l>", lambda e: self.load_state_data())
+
         # todo: consolidate into shader fn
         def enter_button_shade(e):
             # does not work with colorized cells (debug/fun tools)
@@ -264,6 +267,15 @@ class SudokuApp:
                 gui.lock_and_shade_cells(selected_board)
                 state.board_loaded()
                 self.reset_ui_state()
+            # save button
+            elif e.widget == gui.save_button:
+                self.save_state_data()
+                self.reset_ui_state()
+            # save button
+            elif e.widget == gui.load_button:
+                self.load_state_data()
+                state.board_loaded()
+                self.reset_ui_state()
         # board loaded state
         elif state.get_current() == state.BOARD_LOADED:
             # solve button
@@ -311,11 +323,11 @@ class SudokuApp:
             board = ml.hard_example()
         elif e.widget == self.gui.random_easy_board_button:
             board = self.rg.generate_board(self.easy_clue_size, sec=3)
-            str_b = self.io.board_to_str(board)
+            str_b = self.io.board_without_notes_to_str(board)
             if self.logs: logging.info(f'{self.easy_clue_size} clue generated:\n\t{str_b}')
         elif e.widget == self.gui.random_medium_board_button:
             board = self.rg.generate_board(self.medium_clue_size, sec=3)
-            str_b = self.io.board_to_str(board)
+            str_b = self.io.board_without_notes_to_str(board)
             if self.logs: logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
         elif e.widget == self.gui.random_pick_17_board_button:
             # board = matrix_library.steering_wheel_classic
@@ -388,6 +400,7 @@ class SudokuApp:
             num = int(e.widget.cget('text'))
             note_id = self.gui.board_gui_data[i][j].note_ids[num]
             self.gui.play_board.itemconfigure(note_id, state=tk.NORMAL)
+            self.gui.board_gui_data[i][j].note_enable(num)
 
     # todo: review for refactor
     def execute_solve_state(self):  # todo: consider renaming
@@ -459,8 +472,48 @@ class SudokuApp:
         self.cell_selection_queue = dict()
         self.gui.reset_colors_of_all_cells()
 
+    def save_state_data(self):
+        """
+        converts representation of CellData to 3d matrix
+        passes 3d matrix to IO for processing
+
+        board data is typically represented in a matrix of cell values
+        here, each cell is an array of 10 values, with the 0th index
+        representing the cell value, and other 9 representing the
+        respective note values
+        example:
+        cell value of 4, with note values 1, 3, and 9
+        [4, 1, 0, 1, 0, 0, 0, 0, 0, 1]
+        NOTE: cell values are exclusive of note values
+        """
+        board_data_with_notes = list()
+        for i in range(9):
+            row = list()
+            for j in range(9):
+                val = self.gui.board_gui_data[i][j].value
+                notes = self.gui.board_gui_data[i][j].note_values
+                lock = self.gui.board_gui_data[i][j].locked
+                notes[0] = val
+                notes.append(int(lock))
+                row.append(notes)
+            board_data_with_notes.append(row)
+        self.io.write_board_to_save_file(board_data_with_notes)
+
+    def load_state_data(self):
+        board = ml.empty_board()
+        self.gui.update_entire_board(board)
+        self.gui.lock_and_shade_cells(board)
+        all_data = self.io.read_saved_board_from_save_file()
+        board = all_data[0]
+        locked_state = all_data[1]
+        self.gui.lock_and_shade_cells(locked_state)
+        self.gui.load_board_with_notes(board)
+
     def run(self):
         self.gui.mainloop()
+
+    ###########################################################################
+    # debugging tools
 
     # todo: refactor?
     def debugging_tools_change_obj_color(self, e, invert_color=False):

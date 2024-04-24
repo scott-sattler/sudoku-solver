@@ -61,6 +61,9 @@ class PixelGUI(tk.Tk):
         self.number_buttons = None
         self.note_buttons = None
 
+        self.save_button = None
+        self.load_button = None
+
         self.cell_colors = False
 
         self.easy_clue_size = easy_clue_size
@@ -226,6 +229,7 @@ class PixelGUI(tk.Tk):
                 self.board_gui_data[i][j].cell_id = cell_id
                 self.board_gui_data[i][j].text_id = txt_id
                 self.board_gui_data[i][j].note_ids = note_ids
+                self.board_gui_data[i][j].init_notes()
                 for id_ in note_ids:
                     self.play_board.itemconfig(id_, state=tk.HIDDEN)
                     self.board_index_lookup[id_] = (i, j)
@@ -375,6 +379,13 @@ class PixelGUI(tk.Tk):
         self.random_pick_17_board_button.config(width=max(len(txt_3) + 1, 14), padx=6)
         self.random_pick_17_board_button.grid(row=3, column=0, columnspan=3, padx=2, pady=0)
 
+        self.save_button = formatted_button(sbmb, 'SAVE', size)
+        self.save_button.grid(row=4, column=0, padx=2, pady=8)
+
+        self.load_button = formatted_button(sbmb, 'LOAD', size)
+        self.load_button.grid(row=4, column=2, padx=2, pady=8)
+
+
     def initialize_number_panel(self):
         """ these buttons MAY? differ from board select menu buttons """  # todo
         def formatted_button(master, text, f_scale):
@@ -446,7 +457,7 @@ class PixelGUI(tk.Tk):
         self.initialize_notes_panel()
 
     def show_board_selector(self):
-        p_rows = 4  # todo
+        p_rows = 5  # todo
         self.select_board_menu_container.place(
             relx=.5, rely=.5, width=400, height=60 * p_rows, anchor=tk.CENTER)
 
@@ -470,7 +481,7 @@ class PixelGUI(tk.Tk):
 
                 self.play_board.itemconfigure(cell_id, fill=fill)
                 self.play_board.itemconfigure(text_id, text=number)
-                self.play_board.lower(cell_id)
+                # self.play_board.lower(cell_id)  # todo: review
 
     def limited_update(self, changed_cells) -> None:
         """ changed_cells parameter of type [(i, j, value)]
@@ -501,6 +512,25 @@ class PixelGUI(tk.Tk):
 
                 self.play_board.itemconfig(text_id, text=number)
                 self.hide_all_notes_at_cell(i, j)
+
+    def load_board_with_notes(self, new_board) -> None:
+        for i in range(len(new_board)):
+            for j in range(len(new_board[0])):  # assumes rectangular
+                self.board_gui_data[i][j].value = new_board[i][j][0]
+                self.board_gui_data[i][j].note_values = [0] + new_board[i][j][1:]
+
+                text_id = self.board_gui_data[i][j].text_id
+                number = self.board_gui_data[i][j].value
+                if number == 0:
+                    number = ''
+
+                self.play_board.itemconfig(text_id, text=number)
+                # self.hide_all_notes_at_cell(i, j)  # todo: ensure notes are cleared
+                for note_val in self.board_gui_data[i][j].note_values:
+                    if note_val != 0:
+                        note_id = self.board_gui_data[i][j].note_ids[note_val]
+                        self.play_board.itemconfigure(note_id, state=tk.NORMAL)
+
 
     def shade_as_selected_cells(self, selected_cells):
         highlight = self.SELECT_HIGHLIGHT_COLOR
@@ -537,6 +567,7 @@ class PixelGUI(tk.Tk):
             for l in range(3):
                 note_id = self.board_gui_data[i_0 + k][j_0 + l].note_ids[board_val]
                 self.play_board.itemconfigure(note_id, state=tk.HIDDEN)
+                self.board_gui_data[i_0 + k][j_0 + l].note_disable(board_val)
 
         for e in range(9):
             note_id = self.board_gui_data[e][j].note_ids[board_val]
@@ -544,11 +575,15 @@ class PixelGUI(tk.Tk):
             note_id = self.board_gui_data[i][e].note_ids[board_val]
             self.play_board.itemconfigure(note_id, state=tk.HIDDEN)
 
+            self.board_gui_data[e][j].note_disable(board_val)
+            self.board_gui_data[i][e].note_disable(board_val)
+
     def hide_all_notes_at_cell(self, i, j):
         """ hides all notes taken at cell (i, j) """
         for k in range(1, 10):
             n_id = self.board_gui_data[i][j].note_ids[k]
             self.play_board.itemconfigure(n_id, state=tk.HIDDEN)
+            self.board_gui_data[i][j].note_disable(k)
 
     def hide_all_notes_everywhere(self):
         """ hides all notes taken in all cells """
@@ -557,6 +592,7 @@ class PixelGUI(tk.Tk):
                 for k in range(1,10):
                     n_id = self.board_gui_data[i][j].note_ids[k]
                     self.play_board.itemconfigure(n_id, state=tk.HIDDEN)
+                    self.board_gui_data[i][j].note_disable(k)
 
     # todo: broken from refactor
     def toggle_color(self):

@@ -1,26 +1,36 @@
 class CellData:
-    def __init__(self, value=None, text_id=None, cell_id=None, note_ids=None, locked=False):
+    """
+        note_values:
+        OFF: 0.
+        ON: i at i.
+    """
+    def __init__(self, value=None, text_id=None, cell_id=None, note_ids=None, note_values=None, locked=False):
         self.value = value  # actual value to display (as text)
         self.text_id = text_id
         self.cell_id = cell_id
         self.locked = locked  # locked when loading a board
         self.note_ids = note_ids
-        # self.parent = None
-        # self.color = '#ffffff'
+        self.note_values = note_values  # one-indexed
 
-    # def set_color(self, color=None) -> None:
-    #     if color is None:
-    #         color = self.color
-    #     else:
-    #         self.color = color
-    #     self.parent.itemconfigure(fill=color)
+    def init_notes(self):
+        self.note_values = [i for i in range(10)]
+
+    def note_enable(self, val):
+        if self.note_values is None:
+            self.init_notes()
+        self.note_values[val] = val
+
+    def note_disable(self, val):
+        if self.note_values is not None:
+            self.note_values[val] = 0
 
     def __repr__(self):
         info = (f"value: {self.value}\n"
                 f"text_id : {self.text_id}\n"
                 f"cell_id : {self.cell_id}\n"
                 f"locked : {self.locked}\n"
-                f"note_ids : {self.note_ids}\n")
+                f"note_ids : {self.note_ids}\n"
+                f"note_values : {self.note_values}\n")
         return info
 
 
