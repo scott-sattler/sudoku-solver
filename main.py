@@ -347,7 +347,7 @@ class SudokuApp:
         elif e.widget == self.gui.random_easy_board_button:
             board = self.rg.generate_board(self.easy_clue_size, sec=3)
             str_b = self.io.board_to_str(board)
-            logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
+            logging.info(f'{self.easy_clue_size} clue generated:\n\t{str_b}')
         elif e.widget == self.gui.random_medium_board_button:
             board = self.rg.generate_board(self.medium_clue_size, sec=3)
             str_b = self.io.board_to_str(board)
