@@ -96,14 +96,12 @@ class SolverEngine:
 
     @staticmethod
     def _find_empty_greedy(board) -> tuple[int, int] | None:
-        """
-            primary motivation: looks way cooler ;-)
+        """ """
+        """ primary motivation: looks way cooler ;-) """
+        """ assumes most constrained cell is optimal """
+        """ creates a grid of possible moves for each cell """
+        """ note: very inefficient """
 
-            assumes most constrained cell is optimal
-            creates a grid of possible moves for each cell
-
-            note: very inefficient
-        """
 
         choices = list(range(1, 10))
         possible_moves = [
