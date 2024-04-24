@@ -9,59 +9,9 @@ from board_operations import BoardOperations
 from file_io import FileIO
 
 
-# print('''
-# todo:
-#     rename app
-#     ...
-#     rename spawn to show/hide
-#     ...
-#     double click spawn popup???
-#     ...
-#     merge select and delete logic (shift area; old/single selection area)
-#     ...
-#     solver could use notes as an implicit stack for unexplored children...
-#     tho, still going to perform vastly inferior to dancing links...
-#     could look cool tho !
-#     ...
-#     solver was mostly to look cool, but is a bit slow on fixed 17 boards
-#     consider precomputing valid moves (would preserve coolness of current solution)
-#     ...
-#     ! address 40 clue min edge case
-#     consider adding valid transformations (for previously selected boards?)
-#     ...
-#     implement previously randomly selected record (currently in logs)
-#     some sort of save system... scores, etc. ?
-#     ...
-#     optimize random generation; probably require redesign using dancing links
-#     ...
-#     asyncio/multiprocessing/multithreading for board generation?
-#     spawn multiple threads for multiple boards? worse min, better worst case
-#     ...
-#     consider picking random cells and filling them
-#     ...
-#     review and resolve existing todos
-#     matrix creator via input? eg 123456789<enter>2345...
-#     ...
-#     optimization fun (temporal constraints tho :( ):
-#         to (more) optimally reduce density:
-#         transform matrix into undirected graph
-#         give each node
-#             decrement method
-#                 decrement count of adjacent nodes (including diagonal?)
-#             references to diagonal neighbors (dijkstra's update analogue)
-#         heapify single pass array of nodes (binary heap implementation)
-#         using this priority queue, pop, decrement (need update?), validate
-#
-# todo (old):
-#     taskbar icon not displaying
-#     consider subclasses
-#     http://stackoverflow.com/questions/17056211/python-tkinter-option-menu
-#
 # build commands:
 #     pyinstaller --onefile --noconsole --name=sudoku --add-data="17puz49158.txt;." --icon='.\sudoku.ico' main.py
 #     pyinstaller --onefile --name='sudoku_console' --add-data="17puz49158.txt;." --icon='.\sudoku.ico' main.py
-#
-# ''')
 
 
 class SudokuApp:
@@ -588,12 +538,7 @@ class SudokuApp:
 
         obj_ids = []
         if hasattr(widget, 'find_closest'):
-            """
-            unclear why, but the board seems to not recognize being offset,
-            and appears to expect absolute screen coordinates that are offset
-            by its position relative to the window...
-            or, maybe it's the function being used...
-            """
+            """ unclear why, but the board seems to not recognize being offset, and appears to expect absolute screen coordinates that are offset by its position relative to the window... or, maybe it's the function being used... """
             if widget == self.gui.play_board:
                 x_b = x - self.gui.play_board.winfo_x()
                 y_b = y - self.gui.play_board.winfo_y()
