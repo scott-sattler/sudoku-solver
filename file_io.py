@@ -93,32 +93,37 @@ class FileIO:
             return False
         return True
 
+    # todo: currently limited to last saved board
     def read_saved_board_from_save_file(self):
         """ reads str format and returns converted 3d note format """
         b_d_s_v = self.BOARD_DATA_SENTINEL_VALUE
-        board_lines_val_notes_state: list[str] = list()
+        all_boards: list[list[str]] = list()
         try:
             with open(self.save_path, 'r') as f:
                 lines = f.readlines()
+                board_data = list()
+                next_board = False
                 for line in lines:
-                    if line and line[0] == '_':
-                        continue
                     stripped_suffix = line.rstrip("\n\r")
                     if stripped_suffix == '':
                         continue
-                    board_lines_val_notes_state.append(stripped_suffix)
+                    elif b_d_s_v in stripped_suffix:
+                        next_board = True
+                    elif next_board:
+                        board_data.append(stripped_suffix)
 
-            for i, data_line in enumerate(board_lines_val_notes_state):
-                if b_d_s_v in data_line:
-                    break
-            else:
+                    if len(board_data) > 10:
+                        all_boards.append(board_data)
+                        board_data = list()
+                        next_board = False
+
+            if len(all_boards) < 1:
                 return False
-            board_lines_val_notes_state = board_lines_val_notes_state[i + 1:]
             logging.info('save read successful')
         except (IOError,) as e:
             logging.exception('save read failure', stack_info=True)
             return False
-        return self.str_lines_to_board_with_notes(board_lines_val_notes_state)
+        return self.str_lines_to_board_with_notes(all_boards[-1])  # todo: currently limited to last saved board
 
     @staticmethod
     def board_with_notes_to_str(board: list[list[list[int]]]) -> str:
