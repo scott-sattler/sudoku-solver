@@ -53,6 +53,9 @@ class SudokuApp:
 
         self.gui.update_entire_board(self.gui.welcome_message)
 
+        self.gui.initialize_save_load_menu()
+        # self.gui.show_save_load_menu()
+
 
     def bindings(self):
         self.gui.bind("<Button-1>", self.event_handler)
@@ -252,7 +255,7 @@ class SudokuApp:
         if state.get_current() == state.WELCOME:
             # only allow board selection at welcome
             if e.widget == gui.select_button:
-                gui.show_board_selector()
+                gui.show_board_selector_menu()
                 state.board_selector_enable()
         # board selection state
         elif state.get_current() == state.BOARD_SELECTION:
@@ -271,11 +274,24 @@ class SudokuApp:
             elif e.widget == gui.save_button:
                 self.save_state_data()
                 self.reset_ui_state()
-            # save button
+            # load button
             elif e.widget == gui.load_button:
                 self.load_state_data()
                 state.board_loaded()
                 self.reset_ui_state()
+            # data slot 1
+            elif e.widget in gui.data_slot_1_buttons.values():
+                if e.widget == gui.data_slot_1_buttons['save']:
+                    self.save_state_data()
+                if e.widget == gui.data_slot_1_buttons['load']:
+                    self.load_state_data()
+            # data slot 2
+            elif e.widget in gui.data_slot_2_buttons.values():
+                ...
+            # data slot 3
+            elif e.widget in gui.data_slot_3_buttons.values():
+                ...
+
         # board loaded state
         elif state.get_current() == state.BOARD_LOADED:
             # solve button
@@ -291,7 +307,7 @@ class SudokuApp:
                 self.verify_board()
             # select button
             elif e.widget == gui.select_button:
-                gui.show_board_selector()
+                gui.show_board_selector_menu()
                 state.board_selector_enable()
             # board selection and input
             elif e.widget in [self.gui.play_board, self.gui.num_selector_popup]:
@@ -331,7 +347,7 @@ class SudokuApp:
             if self.logs: logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
         elif e.widget == self.gui.random_pick_17_board_button:
             # board = matrix_library.steering_wheel_classic
-            board = self.io.read_and_load_board_from_17_hints_data_file()
+            board = self.io.read_and_load_2d_board_from_17_hints_data_file()
 
         return board
 
@@ -497,17 +513,19 @@ class SudokuApp:
                 notes.append(int(lock))
                 row.append(notes)
             board_data_with_notes.append(row)
-        self.io.write_board_to_save_file(board_data_with_notes)
+        self.io.write_3d_board_to_save_file(board_data_with_notes)
 
-    def load_state_data(self):
+    def load_state_data(self, save_slot=-1):
         board = [[[0 for _ in range(10)] for _ in range(9)] for _ in range(9)]
         locked_state = [[0 for _ in range(9)] for _ in range(9)]
         self.gui.update_entire_board(board)
         self.gui.lock_and_shade_cells(board)
-        all_data = self.io.read_saved_board_from_save_file()
-        if all_data:
-            board = all_data[0]
-            locked_state = all_data[1]
+        all_data_lines = self.io.read_all_saved_3d_boards_from_save_file()
+        selected_board = all_data_lines[save_slot]
+        board_data = self.io.convert_str_lines_to_3d_saved_board_state(selected_board)
+        if board_data:
+            board = board_data[0]
+            locked_state = board_data[1]
         self.gui.lock_and_shade_cells(locked_state)
         self.gui.load_board_with_notes(board)
 

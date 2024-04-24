@@ -119,7 +119,7 @@ class FileIO:
         except (IOError,) as e:
             logging.exception('save read failure', stack_info=True)
             return False
-        return all_boards  # todo: currently limited to last saved board
+        return all_boards
 
     @staticmethod
     def convert_3d_board_to_str(board: list[list[list[int]]]) -> str:

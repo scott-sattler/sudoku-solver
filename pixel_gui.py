@@ -17,6 +17,7 @@ class PixelGUI(tk.Tk):
     BOARD_CELLS = 9
     CELL_SIZE = 50
     DEFAULT_COLOR = '#ffffff'
+    DEFAULT_TKINTER_COLOR = '#f0f0f0'
     BUTTON_COLOR = DEFAULT_COLOR
     BUTTON_HOVER_COLOR = '#dfdfdf'
     DEFAULT_CELL_COLOR = DEFAULT_COLOR
@@ -37,7 +38,8 @@ class PixelGUI(tk.Tk):
         self.config(background="#ffffff")  # white
 
         self.board_font = "fixedsys"  # 12, 18, 24, 34... sizes... 40 is different font... 45 resumes?
-        self.font_size = int(12 / 25.000 * self.CELL_SIZE)  # 24 @ CELL_SIZE 50
+        # self.font_size = int(12 / 25.000 * self.CELL_SIZE)  # 24 @ CELL_SIZE 50
+        self.font_sizes = [0, 12, 13, 18, 24, 34, 40, 45, 51, 63, 65]  # lower bounds, except 12 and 65
 
         self.title_text = 'SUDOKU SOLVER'  # todo: rename
         # self.title_text = 'SUDOKU PLAYER'  # todo: rename
@@ -61,8 +63,13 @@ class PixelGUI(tk.Tk):
         self.number_buttons = None
         self.note_buttons = None
 
-        self.save_button = None
-        self.load_button = None
+        self.data_slot_1_buttons: dict[str, tk.Label] = {
+            'save': ..., 'load': ..., 'preview': ..., 'data': 1}
+        self.data_slot_2_buttons: dict[str, tk.Label] = {
+            'save': ..., 'load': ..., 'preview': ..., 'data': 2}
+        self.data_slot_3_buttons: dict[str, tk.Label] = {
+            'save': ..., 'load': ..., 'preview': ..., 'data': 3}
+        self.save_load_panel_container = None
 
         self.cell_colors = False
 
@@ -125,7 +132,7 @@ class PixelGUI(tk.Tk):
         self.title_label = tk.Label(self.title_container)
         self.title_label.config(
             text=self.title_text,
-            font=(self.board_font, self.font_size * 2),
+            font=(self.board_font, self.font_sizes[7]),
             bg=self.DEFAULT_COLOR,
             padx=20)
         self.title_label.pack()
@@ -151,7 +158,7 @@ class PixelGUI(tk.Tk):
 
         board_size = len(self.board_gui_data)
 
-        font_size = self.font_size
+        font_size = self.font_sizes[4]
         cell_size = self.CELL_SIZE
         offset = self.offset
         cbw = self.play_board.winfo_reqwidth()
@@ -274,7 +281,7 @@ class PixelGUI(tk.Tk):
                 text_id = self.num_selector_popup.create_text(
                     j * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
                     i * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
-                    font=(self.board_font, self.font_size),
+                    font=(self.board_font, self.font_sizes[4]),
                     text=num,
                     tags='num',
                 )
@@ -282,9 +289,8 @@ class PixelGUI(tk.Tk):
 
     def initialize_control_panel(self):
         """ these buttons differ from board select menu buttons """
-        def formatted_button(master, text, f_scale):
-            # font_size = int(self.font_size * f_scale)
-            font_size = int(24)  # 'fixedsys' fixed at 24 until 34
+        def formatted_button(master, text, font_i):
+            font_size = self.font_sizes[font_i]
             button_color = self.BUTTON_COLOR
             button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
@@ -308,7 +314,7 @@ class PixelGUI(tk.Tk):
         foo = tk.Frame(c_p_c, bg=self.DEFAULT_COLOR)
         foo.place(relx=.5, rely=.5, anchor=tk.CENTER)
 
-        f_scale = 1  # 'fixedsys' fixed at 24 until 34
+        f_scale = 4  # 'fixedsys' fixed at 24 until 34
 
         self.solve_button = formatted_button(foo, 'SOLVE', f_scale)
         self.solve_button.grid(row=0, column=0, rowspan=2)
@@ -321,75 +327,10 @@ class PixelGUI(tk.Tk):
         self.select_button = formatted_button(foo, 'SELECT', f_scale)
         self.select_button.grid(row=0, column=2, rowspan=2)
 
-    def initialize_board_selector_menu(self):
-        """ to add borders, these buttons differ from control board buttons """
-        def formatted_button(master, text, f_scale):
-            """  """
-            """ labels necessary due to tk limitations """
-            """ functionally most similar to buttons """
-            font_size = int(self.font_size * f_scale)
-            button_color = self.BUTTON_COLOR
-            button = tk.Label(master)
-            button.config(text=text, anchor=tk.CENTER)
-            button.config(font=(self.board_font, font_size))
-            button.config(bg=button_color, relief='sunken', borderwidth=0)
-            button.config(highlightbackground='black', highlightthickness=2)
-            button.config(height=1, width=7)  # width in chars
-            button.config(pady=8)
-            return button
-
-        # difficulty selector backdrop
-        self.select_board_menu_container = (tk.Canvas(self.play_board))
-        self.select_board_menu_container.config(
-            highlightthickness=2,
-            highlightbackground='black')
-        # place cannot be used here; settings are forgotten
-
-        # exclusively for button alignment  # todo: local?
-        select_board_menu_backdrop = tk.Frame(self.select_board_menu_container)
-        select_board_menu_backdrop.place(relx=.5, rely=.5, anchor=tk.CENTER)
-
-        size = .8  # button font relative size
-        sbmb = select_board_menu_backdrop
-
-        self.empty_board_button = formatted_button(sbmb, "Empty", size)
-        self.empty_board_button.grid(row=0, column=0, padx=2, pady=3)
-
-        self.easy_board_button = formatted_button(sbmb, "Easy", size)
-        self.easy_board_button.grid(row=0, column=1, padx=2, pady=3)
-
-        self.hard_board_button = formatted_button(sbmb, "Hard", size)
-        self.hard_board_button.grid(row=0, column=2, padx=2, pady=3)
-
-        # self.random_board_button = formatted_button(sbmb, "Random", size)
-        # self.random_board_button.grid(row=2, column=0)
-
-        txt_1 = f"Gen. Rand. {self.easy_clue_size} Clue"
-        self.random_easy_board_button = formatted_button(sbmb, txt_1, size)
-        self.random_easy_board_button.config(width=max(len(txt_1) + 1, 14), padx=6)
-        self.random_easy_board_button.grid(row=1, column=0, columnspan=3, padx=2, pady=0)
-
-        txt_2 = f"Gen. Rand. {self.medium_clue_size} Clue"
-        self.random_medium_board_button = formatted_button(sbmb, txt_2, size)
-        self.random_medium_board_button.config(width=max(len(txt_2) + 1, 14), padx=6)
-        self.random_medium_board_button.grid(row=2, column=0, columnspan=3, padx=2, pady=3)
-
-        txt_3 = "Pick Rand. 17 Clue"
-        self.random_pick_17_board_button = formatted_button(sbmb, txt_3, size)
-        self.random_pick_17_board_button.config(width=max(len(txt_3) + 1, 14), padx=6)
-        self.random_pick_17_board_button.grid(row=3, column=0, columnspan=3, padx=2, pady=0)
-
-        self.save_button = formatted_button(sbmb, 'SAVE', size)
-        self.save_button.grid(row=4, column=0, padx=2, pady=8)
-
-        self.load_button = formatted_button(sbmb, 'LOAD', size)
-        self.load_button.grid(row=4, column=2, padx=2, pady=8)
-
-
     def initialize_number_panel(self):
         """ these buttons MAY? differ from board select menu buttons """  # todo
-        def formatted_button(master, text, f_scale):
-            font_size = int(self.font_size * f_scale)
+        def formatted_button(master, text, font_i):
+            font_size = self.font_sizes[font_i]
             button_color = self.BUTTON_COLOR
             button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
@@ -409,14 +350,14 @@ class PixelGUI(tk.Tk):
 
         self.number_buttons = ['one-indexed']
         for i in range(1, 10):
-            temp_button = formatted_button(npc, f'{i}', 1)
+            temp_button = formatted_button(npc, f'{i}', 4)
             temp_button.grid(row=1, column=i, rowspan=1, columnspan=1, sticky='')
             self.number_buttons.append(temp_button)
 
     def initialize_notes_panel(self):
         """ these buttons MAY? differ from board select menu buttons """  # todo
-        def formatted_button(master, text, f_scale):
-            font_size = int(self.font_size * f_scale)
+        def formatted_button(master, text, font_i):
+            font_size = self.font_sizes[font_i]
             button_color = self.BUTTON_COLOR
             note_color = self.NOTE_COLOR
             button = tk.Label(master)
@@ -438,7 +379,7 @@ class PixelGUI(tk.Tk):
 
         self.note_buttons = ['one-indexed']
         for i in range(1, 10):
-            temp_button = formatted_button(npc, f'{i}', .8)
+            temp_button = formatted_button(npc, f'{i}', 3)
             temp_button.grid(row=1, column=i, rowspan=1, columnspan=1, sticky='')
             temp_button.grid(pady=0)
             self.note_buttons.append(temp_button)
@@ -456,10 +397,150 @@ class PixelGUI(tk.Tk):
         self.initialize_number_panel()
         self.initialize_notes_panel()
 
-    def show_board_selector(self):
+    def initialize_board_selector_menu(self):
+        """ to add borders, these buttons differ from control board buttons """
+        def formatted_button(master, text, font_i):
+            """  """
+            """ labels necessary due to tk limitations """
+            """ functionally most similar to buttons """
+            font_size = self.font_sizes[font_i]
+            button_color = self.BUTTON_COLOR
+            button = tk.Label(master)
+            button.config(text=text, anchor=tk.CENTER)
+            button.config(font=(self.board_font, font_size))
+            button.config(bg=button_color, relief='sunken', borderwidth=0)
+            button.config(highlightbackground='black', highlightthickness=2)
+            button.config(height=1, width=7)  # width in chars
+            button.config(pady=8)
+            return button
+
+        # difficulty selector backdrop
+        self.select_board_menu_container = tk.Canvas(self.play_board)
+        self.select_board_menu_container.config(
+            bg=self.DEFAULT_TKINTER_COLOR,
+            highlightthickness=2,
+            highlightbackground='black')
+        # place cannot be used here; settings are forgotten
+
+        # exclusively for button alignment  # todo: local?
+        select_board_menu_backdrop = tk.Frame(self.select_board_menu_container)
+        select_board_menu_backdrop.place(relx=.5, rely=.5, anchor=tk.CENTER)
+
+        f_scale = 3  # button font relative size
+        sbmb = select_board_menu_backdrop
+
+        self.empty_board_button = formatted_button(sbmb, "Empty", f_scale)
+        self.empty_board_button.grid(row=0, column=0, padx=2, pady=3)
+
+        self.easy_board_button = formatted_button(sbmb, "Easy", f_scale)
+        self.easy_board_button.grid(row=0, column=1, padx=2, pady=3)
+
+        self.hard_board_button = formatted_button(sbmb, "Hard", f_scale)
+        self.hard_board_button.grid(row=0, column=2, padx=2, pady=3)
+
+        # self.random_board_button = formatted_button(sbmb, "Random", size)
+        # self.random_board_button.grid(row=2, column=0)
+
+        txt_1 = f"Gen. Rand. {self.easy_clue_size} Clue"
+        self.random_easy_board_button = formatted_button(sbmb, txt_1, f_scale)
+        self.random_easy_board_button.config(width=max(len(txt_1) + 1, 14), padx=6)
+        self.random_easy_board_button.grid(row=1, column=0, columnspan=3, padx=2, pady=0)
+
+        txt_2 = f"Gen. Rand. {self.medium_clue_size} Clue"
+        self.random_medium_board_button = formatted_button(sbmb, txt_2, f_scale)
+        self.random_medium_board_button.config(width=max(len(txt_2) + 1, 14), padx=6)
+        self.random_medium_board_button.grid(row=2, column=0, columnspan=3, padx=2, pady=3)
+
+        txt_3 = "Pick Rand. 17 Clue"
+        self.random_pick_17_board_button = formatted_button(sbmb, txt_3, f_scale)
+        self.random_pick_17_board_button.config(width=max(len(txt_3) + 1, 14), padx=6)
+        self.random_pick_17_board_button.grid(row=3, column=0, columnspan=3, padx=2, pady=0)
+
+        self.save_button = formatted_button(sbmb, 'SAVE', f_scale)
+        self.save_button.grid(row=4, column=0, padx=2, pady=8)
+
+        self.load_button = formatted_button(sbmb, 'LOAD', f_scale)
+        self.load_button.grid(row=4, column=2, padx=2, pady=8)
+
+    def initialize_save_load_menu(self):
+        def formatted_button(master, text, font_i):
+            """  """
+            """ labels necessary due to tk limitations """
+            """ functionally most similar to buttons """
+            font_size = self.font_sizes[font_i]
+            button_color = self.BUTTON_COLOR
+            button = tk.Label(master)
+            button.config(text=text, anchor=tk.CENTER)
+            button.config(font=(self.board_font, font_size))
+            button.config(bg=button_color, relief='sunken', borderwidth=0)
+            button.config(highlightbackground='black', highlightthickness=2)
+            button.config(height=1, width=len(text)+ 2)  # width in chars
+            button.config(pady=8)
+            return button
+
+        # difficulty selector backdrop
+        self.save_load_panel_container = tk.Canvas(self.play_board)
+        self.save_load_panel_container.config(
+            width=350, height=200,
+            bg=self.DEFAULT_TKINTER_COLOR,
+            highlightthickness=2,
+            highlightbackground='black')
+        # place cannot be used here; settings are forgotten
+
+        # exclusively for button alignment  # todo: local?
+        save_load_panel_backdrop = tk.Frame(self.save_load_panel_container)
+        save_load_panel_backdrop.place(relx=.5, rely=.5, anchor=tk.CENTER)
+
+        f_scale_d = 3  # button font relative size
+        f_scale_sl = 3
+        s_l_p_b = save_load_panel_backdrop
+
+        data_slot_1_button = formatted_button(s_l_p_b, "Data Slot 1", f_scale_d)
+        data_slot_1_save_button = formatted_button(s_l_p_b, "SAVE", f_scale_sl)
+        data_slot_1_load_button = formatted_button(s_l_p_b, "LOAD", f_scale_sl)
+        self.data_slot_1_buttons['preview'] = data_slot_1_button
+        self.data_slot_1_buttons['save'] = data_slot_1_save_button
+        self.data_slot_1_buttons['load'] = data_slot_1_load_button
+
+        data_slot_2_button = formatted_button(s_l_p_b, "Data Slot 2", f_scale_d)
+        data_slot_2_save_button = formatted_button(s_l_p_b, "SAVE", f_scale_sl)
+        data_slot_2_load_button = formatted_button(s_l_p_b, "LOAD", f_scale_sl)
+        self.data_slot_2_buttons['preview'] = data_slot_2_button
+        self.data_slot_2_buttons['save'] = data_slot_2_save_button
+        self.data_slot_2_buttons['load'] = data_slot_2_load_button
+
+        data_slot_3_button = formatted_button(s_l_p_b, "Data Slot 3", f_scale_d)
+        data_slot_3_save_button = formatted_button(s_l_p_b, "SAVE", f_scale_sl)
+        data_slot_3_load_button = formatted_button(s_l_p_b, "LOAD", f_scale_sl)
+        self.data_slot_3_buttons['preview'] = data_slot_3_button
+        self.data_slot_3_buttons['save'] = data_slot_3_save_button
+        self.data_slot_3_buttons['load'] = data_slot_3_load_button
+
+        pady = 6
+
+        data_slot_1_button.grid(row=0, column=0, padx=2, pady=pady)
+        data_slot_2_button.grid(row=1, column=0, padx=2, pady=pady)
+        data_slot_3_button.grid(row=2, column=0, padx=2, pady=pady)
+
+        data_slot_1_save_button.grid(row=0, column=1, padx=2, pady=pady)
+        data_slot_2_save_button.grid(row=1, column=1, padx=2, pady=pady)
+        data_slot_3_save_button.grid(row=2, column=1, padx=2, pady=pady)
+
+        data_slot_1_load_button.grid(row=0, column=2, padx=2, pady=pady)
+        data_slot_2_load_button.grid(row=1, column=2, padx=2, pady=pady)
+        data_slot_3_load_button.grid(row=2, column=2, padx=2, pady=pady)
+
+        # self.save_load_panel_container.place(relx=.5, rely=.5, anchor=tk.CENTER)
+
+    def show_board_selector_menu(self):
         p_rows = 5  # todo
         self.select_board_menu_container.place(
             relx=.5, rely=.5, width=400, height=60 * p_rows, anchor=tk.CENTER)
+
+    def show_save_load_menu(self):
+        p_rows = 3
+        self.save_load_panel_container.place(
+            relx=.5, rely=.5, width=460, height=220, anchor=tk.CENTER)
 
     def hide_board_selector(self):
         self.select_board_menu_container.place_forget()
