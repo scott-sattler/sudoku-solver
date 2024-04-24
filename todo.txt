@@ -2,6 +2,22 @@ todo bugs:
     hold and drag Tkinter bug; have to code workaround or ignore
     ...
     refactor solve/verify button states (enable/disable color)
+    ...
+    possible note CellData inclusion of note state
+    ...
+    0 index notes ?
+
+
+
+
+
+    design save/load system
+
+
+
+
+
+
 
 todo:
     rename app
