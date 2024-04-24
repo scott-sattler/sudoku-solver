@@ -21,8 +21,6 @@ class SudokuApp:
     easy_clue_size = 34
     medium_clue_size = 28
 
-    # PRIMARY_BUTTON = "<Button-1>"  # todo: unimplemented
-
     INPUT = {
         'mouse-1':  0b00001,  # left mouse button
         'mouse-3':  0b00100,  # right mouse button
@@ -199,11 +197,10 @@ class SudokuApp:
         return False
 
     def cell_select(self, e, bitflags):
-        """
-        explicit modifier evidently necessary
-        Tk seems to not work correctly, possibly due to undocumented change
-        github.com/python/cpython/blob/main/Lib/tkinter/__init__.py#L1707
-        """
+        """ """
+        """ explicit modifier evidently necessary """
+        """ Tk seems to not work correctly, possibly due to undocumented change """
+        """ github.com/python/cpython/blob/main/Lib/tkinter/__init__.py#L1707 """
         if self.state.get_current() != self.state.BOARD_LOADED:
             return
 
