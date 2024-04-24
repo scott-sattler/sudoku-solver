@@ -100,7 +100,7 @@ def font_preview():
     frm = tk.Frame(root)
     frm.grid()
 
-    for i in range(91):
+    for i in range(66):
         size = i
         label = tk.Label(frm)
         text = f'Foo{size}'
