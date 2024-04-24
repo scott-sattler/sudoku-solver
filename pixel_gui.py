@@ -128,12 +128,11 @@ class PixelGUI(tk.Tk):
         self.title_label.pack()
 
     def initialize_play_board(self):
-        """
-        - create board
-        - create board lines
-        - initialize (populate) board_gui_data matrix
-            create square cell, text box, and notes for each cell
-        """
+        """ """
+        """ create board """
+        """ create board lines """
+        """ initialize (populate) board_gui_data matrix """
+        """     create square cell, text box, and notes for each cell """
         self.play_board_container = tk.Frame(self.container)
         self.play_board_container.config(bg=self.DEFAULT_COLOR)
         self.play_board_container.pack(after=self.title_container)
@@ -473,9 +472,7 @@ class PixelGUI(tk.Tk):
                 self.play_board.lower(cell_id)
 
     def limited_update(self, changed_cells) -> None:
-        """ changed_cells parameter of type [(i, j, value)]
-            note: does NOT hide notes
-        """
+        """ changed_cells parameter of type [(i, j, value)]; note: does NOT hide notes """
         if not changed_cells:
             return
         for ij, val in changed_cells:
