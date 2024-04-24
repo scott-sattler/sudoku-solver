@@ -21,6 +21,8 @@ class SudokuApp:
     easy_clue_size = 34
     medium_clue_size = 28
 
+    # PRIMARY_BUTTON = "<Button-1>"  # todo: unimplemented
+
     INPUT = {
         'mouse-1':  0b00001,  # left mouse button
         'mouse-3':  0b00100,  # right mouse button
@@ -197,10 +199,11 @@ class SudokuApp:
         return False
 
     def cell_select(self, e, bitflags):
-        """ """
-        """ explicit modifier evidently necessary """
-        """ Tk seems to not work correctly, possibly due to undocumented change """
-        """ github.com/python/cpython/blob/main/Lib/tkinter/__init__.py#L1707 """
+        """
+        explicit modifier evidently necessary
+        Tk seems to not work correctly, possibly due to undocumented change
+        github.com/python/cpython/blob/main/Lib/tkinter/__init__.py#L1707
+        """
         if self.state.get_current() != self.state.BOARD_LOADED:
             return
 
@@ -535,6 +538,12 @@ class SudokuApp:
 
         obj_ids = []
         if hasattr(widget, 'find_closest'):
+            """ 
+            unclear why, but the board seems to not recognize being offset, 
+            and appears to expect absolute screen coordinates that are offset 
+            by its position relative to the window... or, maybe it's the 
+            function being used... 
+            """
             if widget == self.gui.play_board:
                 x_b = x - self.gui.play_board.winfo_x()
                 y_b = y - self.gui.play_board.winfo_y()
