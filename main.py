@@ -20,18 +20,12 @@ class SudokuApp:
     easy_clue_size = 34
     medium_clue_size = 28
 
-    # PRIMARY_BUTTON = "<Button-1>"  # todo: unimplemented
-
     INPUT = {
         'mouse-1':  0b00001,  # left mouse button
         'mouse-3':  0b00100,  # right mouse button
         'shift':    0b01000,  # shift
         'motion':   0b10000,  # motion
     }
-
-    # # logger = logging.getLogger(__name__)
-    # logging.basicConfig(filename='main_log.log', encoding='utf-8', level=logging.DEBUG)
-    # logging.getLogger()
 
     def __init__(self, logs):
         self.logs = logs
