@@ -36,8 +36,8 @@ class FileIO:
         except (IOError,):
             logging.warning(f'file creation failure:\n\t{self.save_path}')
 
-    def read_and_load_board_from_17_hints_data_file(self):
-        """ returns a list of boards """
+    def read_and_load_2d_board_from_17_hints_data_file(self):
+        """ returns a random board from 17 clue data file """
         board_save_data = str()
         random_int = r.randint(0, 49158 - 1)
         try:
@@ -50,13 +50,12 @@ class FileIO:
         except (IOError,) as e:
             logging.exception('save read failure', stack_info=True)
             return False
-        return self.str_to_board_without_notes(board_save_data)
+        return self.convert_str_lines_to_2d_board(board_save_data)
 
     @staticmethod
-    def str_to_board_without_notes(str_data: str) -> list[list[int]]:
+    # todo: merge with saved board loader, or into parent function
+    def convert_str_lines_to_2d_board(str_data: str) -> list[list[int]]:
         """ converts from string format to array format """
-        n = m = 9  # assumes 9 by 9
-
         reconstructed = list()
         j = 0
         row = list()
@@ -66,22 +65,20 @@ class FileIO:
             char = int(char)
             row.append(char)
             j += 1
-            if not j < n:
+            if not j < 9:
                 reconstructed.append(row)
                 row = list()
                 j = 0
-
-        print(reconstructed)
         return reconstructed
 
     ###########################################################################
     # save/load fns
 
-    def write_board_to_save_file(self, board_data):
+    def write_3d_board_to_save_file(self, board_data):
         try:
             with open(self.save_path, 'a') as f:
                 encoded = self.BOARD_DATA_SENTINEL_VALUE + '\n'
-                encoded = encoded + self.board_with_notes_to_str(board_data)
+                encoded = encoded + self.convert_3d_board_to_str(board_data)
                 for line in encoded.split('\n'):
                     line = line + '\n'
                     f.write(line)
@@ -93,8 +90,7 @@ class FileIO:
             return False
         return True
 
-    # todo: currently limited to last saved board
-    def read_saved_board_from_save_file(self):
+    def read_all_saved_3d_boards_from_save_file(self):
         """ reads str format and returns converted 3d note format """
         b_d_s_v = self.BOARD_DATA_SENTINEL_VALUE
         all_boards: list[list[str]] = list()
@@ -123,10 +119,10 @@ class FileIO:
         except (IOError,) as e:
             logging.exception('save read failure', stack_info=True)
             return False
-        return self.str_lines_to_board_with_notes(all_boards[-1])  # todo: currently limited to last saved board
+        return all_boards  # todo: currently limited to last saved board
 
     @staticmethod
-    def board_with_notes_to_str(board: list[list[list[int]]]) -> str:
+    def convert_3d_board_to_str(board: list[list[list[int]]]) -> str:
         """
             converts from 3d CellData matrix format to string format
             board_str
@@ -170,9 +166,13 @@ class FileIO:
         return board_str + '\n' + notes_strs + '\n' + locked_state
 
     @staticmethod
-    def str_lines_to_board_with_notes(str_line_data: list[str]) \
+    def convert_str_lines_to_3d_saved_board_state(str_line_data: list[str]) \
             -> tuple[list[list[list[int]]], list[list[int]]]:
-        """ returns tuple of 3d board with notes and 2d lock state board """
+        """
+            returns list of tuples:
+                3d board of form: (i, j) <- [val, note_1, note_2 ... note_9]
+                2d board of form: (i, j) <- lock state
+        """
         board_val_data = str_line_data[0]
         note_val_data = str_line_data[1:-1]
         locked_state_data = str_line_data[-1]
@@ -241,28 +241,6 @@ class FileIO:
         to_str = ''.join(to_str)
         return to_str
 
-    ###########################################################################
-    # todo: unused below
-
-    # todo: review/remove; unused
-    def read_and_load_all_boards_from_save_file(self):
-        """ returns a list of boards """
-        all_data = list()
-        try:
-            with open(self.save_path, 'r') as f:
-                lines = f.readlines()
-                for line in lines:
-                    if line and line[0] == '_':
-                        continue
-                    stripped_suffix = line.rstrip("\n\r")
-                    decoded = self.str_to_board_without_notes(stripped_suffix)
-                    all_data.append(decoded)
-            logging.info('save read successful')
-        except (IOError,) as e:
-            logging.exception('save read failure', stack_info=True)
-            return False
-        return all_data
-
 
 if __name__ == '__main__':
     import utilities as u
@@ -280,8 +258,8 @@ if __name__ == '__main__':
     io = FileIO()
     # io.write_to_save_file(test_data)
     # data = io.read_from_save_file()
-    data = io.read_and_load_board_from_17_hints_data_file()
-    io.write_board_to_save_file(data)
+    data = io.read_and_load_2d_board_from_17_hints_data_file()
+    io.write_3d_board_to_save_file(data)
     test_convert = io.read_and_load_all_boards_from_save_file()
     # print(io._board_to_str(test_convert))
     # print(u.strip_for_print(test_convert))
