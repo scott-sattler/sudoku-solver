@@ -34,9 +34,11 @@ class SudokuApp:
     # logging.basicConfig(filename='main_log.log', encoding='utf-8', level=logging.DEBUG)
     # logging.getLogger()
 
-    def __init__(self):
-        logging.getLogger()
-        logging.basicConfig(filename='logs.log', encoding='utf-8', level=logging.DEBUG)
+    def __init__(self, logs):
+        self.logs = logs
+        if self.logs:
+            logging.getLogger()
+            logging.basicConfig(filename='logs.log', encoding='utf-8', level=logging.DEBUG)
 
         self.cell_selection_queue = dict()  # set lacks order
 
@@ -52,8 +54,6 @@ class SudokuApp:
         self.gui.initialize_board_input_panel()
         self.gui.initialize_control_panel()
         self.gui.initialize_board_selector_menu()
-        # self.gui.initialize_num_selector_popup()
-        # self.gui.initialize_notes_panel()
         self.bindings()  # call last
 
         self.all_board_references = self.gui.load_all_boards()
@@ -62,10 +62,6 @@ class SudokuApp:
 
 
     def bindings(self):
-        # todo: review todo below; have changed functionality since
-        # todo: hold and drag Tkinter bug; have to code workaround or ignore
-        # self.gui.bind("<Button-1>", self.event_handler)
-        # self.gui.bind("<Button-3>", self.event_handler)
         self.gui.bind("<Button-1>", self.event_handler)
         self.gui.bind("<Button-3>", self.event_handler)
 
@@ -79,13 +75,6 @@ class SudokuApp:
         self.gui.bind("<Shift-Button-3>", lambda e: self.cell_select(e, shift_mb3))
         self.gui.bind("<Shift-B3-Motion>", lambda e: self.cell_select(e, motion_shift_mb3))
 
-        # self.gui.bind("<Double-Button-1>", self.cell_highlight)
-
-        # self.gui.bind("<Shift-KeyRelease>", self.shift_release)
-        # self.gui.bind("<ButtonRelease-1>", self.event_handler)
-        # self.gui.bind("<Button-2>", self.event_handler)
-
-        # self.gui.bind("<ButtonRelease-3>", self.event_handler)
         self.gui.bind("<c>", lambda e: self.gui.toggle_color())
 
         # todo: consolidate into shader fn
@@ -100,15 +89,6 @@ class SudokuApp:
             if e.widget['bg'] == self.gui.BUTTON_HOVER_COLOR:
                 e.widget['bg'] = self.gui.BUTTON_COLOR
 
-        # todo: deprecated
-        def enter_notes_hide(e):
-            self.gui.num_selector_popup.place_forget()
-
-        # todo: deprecated
-        def leave_notes_show(e):
-            return
-
-        # todo: refactor ?
         """ manually bind all buttons because my_boss chose dated framework """
         s_b_m_c = self.gui.select_board_menu_container
         c_p_c = self.gui.control_panel_container
@@ -127,15 +107,10 @@ class SudokuApp:
             button.bind("<Enter>", enter_button_shade)
             button.bind("<Leave>", leave_button_unshade)
 
-        # self.gui.notes_panel_container.bind("<Enter>", enter_notes_hide)
-        # self.gui.notes_panel_container.bind("<Leave>", leave_notes_show)
 
-        # todo: debuggin' ma life away
-        import utilities as u
         def debug_debug_info():
-            # print(f"{'has_lock ':.<30} {self.gui.has_lock}")  # todo: deprecated
-            print(f"{'cell_selection_queue ':.<30} {self.cell_selection_queue}")  # todo: deprecated; use self.sell_selection_queue
-            print(f"{'state.get_current() ':.<30} {self.state.get_current()}")  # todo: deprecated;
+            print(f"{'cell_selection_queue ':.<30} {self.cell_selection_queue}")
+            print(f"{'state.get_current() ':.<30} {self.state.get_current()}")
             print(f"{'state.get_current() ':.<30} {self.state.state_manager}")
             print()
 
@@ -156,7 +131,6 @@ class SudokuApp:
             # note: unable to use shift binds
             '<Alt-h>': lambda e: print('text containing help commands'),
             '<Alt-d>': lambda e: debug_debug_info(),
-            # '<Alt-l>': lambda e: invert_color(self.gui.has_lock),  # todo: deprecated; can use state manager .current..
             '<Alt-c>': lambda e: self.debugging_tools_change_obj_color(e, False),
             '<Alt-b>': lambda e: print(
                 u.strip_for_print([[cell.value for cell in row] for row in self.gui.board_gui_data])),  # noqa
@@ -230,7 +204,7 @@ class SudokuApp:
         if self.gui.board_gui_data[i][j].value != 0:  # exclude populated cells
             return
 
-        fill = 'red'  # todo: appearance indicates error
+        fill = 'red'  # appearance indicates error
         if bitflags & self.INPUT['mouse-1']:  # left mouse button
             fill = self.gui.SELECT_HIGHLIGHT_COLOR
             self.cell_selection_queue[(i, j)] = None
@@ -347,11 +321,11 @@ class SudokuApp:
         elif e.widget == self.gui.random_easy_board_button:
             board = self.rg.generate_board(self.easy_clue_size, sec=3)
             str_b = self.io.board_to_str(board)
-            logging.info(f'{self.easy_clue_size} clue generated:\n\t{str_b}')
+            if self.logs: logging.info(f'{self.easy_clue_size} clue generated:\n\t{str_b}')
         elif e.widget == self.gui.random_medium_board_button:
             board = self.rg.generate_board(self.medium_clue_size, sec=3)
             str_b = self.io.board_to_str(board)
-            logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
+            if self.logs: logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
         elif e.widget == self.gui.random_pick_17_board_button:
             # board = matrix_library.steering_wheel_classic
             board = self.io.read_and_load_board_from_17_hints_data_file()
@@ -391,8 +365,6 @@ class SudokuApp:
             elif len(self.cell_selection_queue) < 2:  # self.gui.selected_cell:
                 # restore selected cell
                 if len(self.cell_selection_queue) == 1:
-                    # selected_cells = self.cell_selection_queue.keys()
-                    # self.gui.reset_selected_cell_colors(selected_cells)
                     self.cell_selection_queue = dict()
                 self.gui.reset_colors_of_all_cells()
                 # record cell and spawn number selector popup
@@ -410,7 +382,6 @@ class SudokuApp:
         cells_to_update = list()
         for i, j in self.cell_selection_queue.keys():
             cells_to_update.append(((i, j), val))
-            # self.gui.limited_update([((i, j), val)])
             self.gui.hide_all_notes_at_cell(i, j)
             self.gui.hide_invalid_notes_after_entry(i, j, val)
 
@@ -427,7 +398,7 @@ class SudokuApp:
             note_id = self.gui.board_gui_data[i][j].note_ids[num]
             self.gui.play_board.itemconfigure(note_id, state=tk.NORMAL)
 
-    # todo: refactor button states (enable/disable color)
+    # todo: review for refactor
     def execute_solve_state(self):  # todo: consider renaming
         if self.gui.solve_button['state'] == tk.DISABLED:
             return
@@ -436,11 +407,9 @@ class SudokuApp:
             self.gui.solve_button.config(text='ABORT?')
             self.gui.verify_button['state'] = tk.DISABLED
             self.gui.select_button['state'] = tk.DISABLED
-            self.state_solving = True
             self.solve_board()
             self.gui.solve_button.config(text='SOLVE')
             self.gui.solve_button['state'] = tk.DISABLED
-            self.state_solving = False
             self.gui.select_button['state'] = tk.NORMAL
             self.gui.verify_button['state'] = tk.NORMAL
         else:  # solve_button.cget('text') == 'ABORT?'
@@ -459,8 +428,8 @@ class SudokuApp:
 
             if not next_limited_update:
                 break
-            self.gui.limited_update(next_limited_update)  # todo: review
-            self.gui.update()  # todo: review
+            self.gui.limited_update(next_limited_update)
+            self.gui.update()
 
     # todo: separate gui verify state
     # todo: review (never reviewed after move)
@@ -485,15 +454,12 @@ class SudokuApp:
         """ convert to array of int arrays """
         return [[cell.value for cell in row] for row in self.gui.board_gui_data]
 
-
     # todo: review
     def reset_ui_state(self):  # todo: specify state to reset to
         self.gui.solve_button['state'] = tk.NORMAL
         self.gui.verify_button['state'] = tk.NORMAL
 
         self.gui.select_board_menu_container.place_forget()
-        # self.gui.notes_panel_container.place_forget()
-        # self.gui.num_selector_popup.place_forget()
         self.gui.board_input_panel_container.place_forget()
 
         selected_cells = self.cell_selection_queue.keys()
@@ -505,6 +471,7 @@ class SudokuApp:
     def run(self):
         self.gui.mainloop()
 
+    # todo: refactor?
     def debugging_tools_change_obj_color(self, e, invert_color=False):
         # bug: does not correctly change color of main board's numbers
         board = e.widget
@@ -538,12 +505,6 @@ class SudokuApp:
 
         obj_ids = []
         if hasattr(widget, 'find_closest'):
-            """ 
-            unclear why, but the board seems to not recognize being offset, 
-            and appears to expect absolute screen coordinates that are offset 
-            by its position relative to the window... or, maybe it's the 
-            function being used... 
-            """
             if widget == self.gui.play_board:
                 x_b = x - self.gui.play_board.winfo_x()
                 y_b = y - self.gui.play_board.winfo_y()
@@ -591,5 +552,5 @@ if __name__ == '__main__':
     BOARD_SIZE = 9
     CELL_SIZE = 50  # cell size: minimum > 25... probably
 
-    app = SudokuApp()
+    app = SudokuApp(logs=False)
     app.run()
