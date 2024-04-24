@@ -1,9 +1,8 @@
 import logging
-from custom_classes import CellData
 from custom_classes import StateManager
 import tkinter as tk
 from pixel_gui import PixelGUI
-import matrix_library
+import matrix_library as ml
 from solver_engine import SolverEngine
 from board_operations import BoardOperations
 from file_io import FileIO
@@ -311,8 +310,6 @@ class SudokuApp:
 
 
     def select_board(self, e):
-        import matrix_library as ml
-
         board = ml.empty_board()
         if e.widget == self.gui.easy_board_button:
             board = ml.easy_example()
