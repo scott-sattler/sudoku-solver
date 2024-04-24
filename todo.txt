@@ -7,19 +7,9 @@ todo bugs:
     ...
     0 index notes ?
 
-
-
-
-
-    design save/load system
-
-
-
-
-
-
-
 todo:
+    consider button formatter consolidation... or, general widget consolidation (factories?)
+    ...
     rename app
     ...
     rename spawn to show/hide
