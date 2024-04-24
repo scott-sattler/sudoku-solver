@@ -500,12 +500,14 @@ class SudokuApp:
         self.io.write_board_to_save_file(board_data_with_notes)
 
     def load_state_data(self):
-        board = ml.empty_board()
+        board = [[[0 for _ in range(10)] for _ in range(9)] for _ in range(9)]
+        locked_state = [[0 for _ in range(9)] for _ in range(9)]
         self.gui.update_entire_board(board)
         self.gui.lock_and_shade_cells(board)
         all_data = self.io.read_saved_board_from_save_file()
-        board = all_data[0]
-        locked_state = all_data[1]
+        if all_data:
+            board = all_data[0]
+            locked_state = all_data[1]
         self.gui.lock_and_shade_cells(locked_state)
         self.gui.load_board_with_notes(board)
 

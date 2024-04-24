@@ -111,6 +111,8 @@ class FileIO:
             for i, data_line in enumerate(board_lines_val_notes_state):
                 if b_d_s_v in data_line:
                     break
+            else:
+                return False
             board_lines_val_notes_state = board_lines_val_notes_state[i + 1:]
             logging.info('save read successful')
         except (IOError,) as e:
