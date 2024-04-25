@@ -10,6 +10,8 @@ todo bugs:
     save file has an additional newline at the end
 
 todo:
+    consider board preview
+    ...
     overwrite conformation on occupied data slots
     ...
     consider button formatter consolidation... or, general widget consolidation (factories?)
