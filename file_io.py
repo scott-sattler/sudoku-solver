@@ -6,9 +6,24 @@ import random as r
 class FileIO:
     """ non-data line prefix '_' """
     DATA_FILE_NAME = '17puz49158.txt'
-    SAVE_FILE_NAME = 'sudoku_save'
-    BOARD_DATA_SENTINEL_VALUE = 'board_data:'
+    SAVE_FILE_NAME = 'sudoku_save_data'
+    BOARD_DATA_SENTINEL_VALUE = 'board_data_'  # eg board_data_slot_*
     CLUE_17_SENTINEL_VALUE = '_17_clue_set: '
+
+    """    
+    save file data format:
+        _17_hint_set: bare_set_values
+        newline
+        board_data_slot_1
+        board data (empty board data if none)
+        newline
+        board_data_slot_2
+        board data (empty board data if none)
+        newline
+        board_data_slot_3
+        board data (empty board data if none)
+        newline
+    """
 
     def __init__(self, local_save_path='./', save_file_name=SAVE_FILE_NAME):
         self.save_path = local_save_path
@@ -28,13 +43,33 @@ class FileIO:
         # logger.debug .info .warning .error
 
     def create_file(self):
+        """ to simplify other operations, a valid file format is initialized """
         try:
             f = open(self.save_path, 'x')
             f.write(self.CLUE_17_SENTINEL_VALUE + '\n\n')
+            for i in range(1, 4):
+                f.write(self._empty_save_slot_string(i))
             f.close()
             logging.info(f'file creation successful:\n\t{self.save_path}')
         except (IOError,):
             logging.warning(f'file creation failure:\n\t{self.save_path}')
+
+    def _empty_save_slot_string(self, slot_number):
+        b_d_s_v = self.BOARD_DATA_SENTINEL_VALUE
+        empty_board_state_string = [f'{b_d_s_v}slot_{slot_number}:\n']
+        for _ in range(10):
+            line = ''.join(['.' for _ in range(81)] + ['\n'])
+            empty_board_state_string.append(line)
+        empty_board_state_string.append(''.join(['0' for _ in range(81)] + ['\n']))
+        empty_board_state_string = ''.join(empty_board_state_string + ['\n'])
+        return empty_board_state_string
+
+    def _slot_sentinel_line(self, slot_number):
+        """
+            text file slot number is one-indexed
+            reason for using text file is relative accessibility
+        """
+        return f'{self.BOARD_DATA_SENTINEL_VALUE}slot_{slot_number + 1}:\n'
 
     def read_and_load_2d_board_from_17_hints_data_file(self):
         """ returns a random board from 17 clue data file """
@@ -74,16 +109,44 @@ class FileIO:
     ###########################################################################
     # save/load fns
 
-    def write_3d_board_to_save_file(self, board_data):
+    def update_save_file(self, board_data, slot_number):
+        """ rewrite entire file with new board """
+        try:
+            with open(self.save_path, 'r+') as f:
+                all_lines = f.read()
+
+                all_lines = all_lines.split('\n\n')
+                all_lines.pop() if len(all_lines) > 4 else ...  # carriage compensation
+
+                encoded = self._slot_sentinel_line(slot_number)
+                encoded += self.convert_3d_board_to_str(board_data)
+                start_i = 0
+                for segment in all_lines:
+                    if self.BOARD_DATA_SENTINEL_VALUE in segment:
+                        break
+                    start_i += 1
+                all_lines[start_i + slot_number] = encoded
+
+                f.seek(0)
+                for line in all_lines:
+                    f.write(line)
+                    f.write('\n\n')
+            logging.info(f'write successful:\n\t{self.save_path}\n\t{encoded}')
+        except (IOError,) as e:
+            logging.exception('write failure', stack_info=True)
+            return False
+        return True
+
+    # todo: deprecated
+    def write_3d_board_to_save_file(self, board_data, slot_number):
         try:
             with open(self.save_path, 'a') as f:
-                encoded = self.BOARD_DATA_SENTINEL_VALUE + '\n'
-                encoded = encoded + self.convert_3d_board_to_str(board_data)
+                encoded = self._slot_sentinel_line(slot_number)
+                encoded += self.convert_3d_board_to_str(board_data)
                 for line in encoded.split('\n'):
                     line = line + '\n'
                     f.write(line)
                 f.write('\n')
-                f.close()
             logging.info(f'write successful:\n\t{self.save_path}\n\t{encoded}')
         except (IOError,) as e:
             logging.exception('write failure', stack_info=True)
@@ -91,6 +154,23 @@ class FileIO:
         return True
 
     def read_all_saved_3d_boards_from_save_file(self):
+        """ reads str format and returns converted 3d note format """
+        try:
+            with open(self.save_path, 'r') as f:
+                all_lines = f.read()
+            all_lines = all_lines.split('\n\n')
+            all_boards = list()
+            for segment in all_lines:
+                if self.BOARD_DATA_SENTINEL_VALUE in segment:
+                    all_boards.append(segment)
+            logging.info('save read successful')
+        except (IOError,) as e:
+            logging.exception('save read failure', stack_info=True)
+            return False
+        return all_boards
+
+    # todo: deprecated
+    def old_read_all_saved_3d_boards_from_save_file(self):
         """ reads str format and returns converted 3d note format """
         b_d_s_v = self.BOARD_DATA_SENTINEL_VALUE
         all_boards: list[list[str]] = list()
@@ -165,17 +245,21 @@ class FileIO:
 
         return board_str + '\n' + notes_strs + '\n' + locked_state
 
-    @staticmethod
-    def convert_str_lines_to_3d_saved_board_state(str_line_data: list[str]) \
+    def convert_str_lines_to_3d_saved_board_state(self, str_line_data: str) \
             -> tuple[list[list[list[int]]], list[list[int]]]:
         """
+            handles data with sentinel prefix
+
             returns list of tuples:
                 3d board of form: (i, j) <- [val, note_1, note_2 ... note_9]
                 2d board of form: (i, j) <- lock state
         """
-        board_val_data = str_line_data[0]
-        note_val_data = str_line_data[1:-1]
-        locked_state_data = str_line_data[-1]
+        str_line_data_as_list = str_line_data.split('\n')
+        if self.BOARD_DATA_SENTINEL_VALUE in str_line_data_as_list[0]:
+            str_line_data_as_list.pop(0)
+        board_val_data = str_line_data_as_list[0]
+        note_val_data = str_line_data_as_list[1:-1]
+        locked_state_data = str_line_data_as_list[-1]
         reconstructed_board_with_notes = list()
         locked_state_board = list()
 
@@ -256,10 +340,3 @@ if __name__ == '__main__':
         [0, 0, 6, 0, 0, 7, 0, 0, 8],
     ]
     io = FileIO()
-    # io.write_to_save_file(test_data)
-    # data = io.read_from_save_file()
-    data = io.read_and_load_2d_board_from_17_hints_data_file()
-    io.write_3d_board_to_save_file(data)
-    test_convert = io.read_and_load_all_boards_from_save_file()
-    # print(io._board_to_str(test_convert))
-    # print(u.strip_for_print(test_convert))

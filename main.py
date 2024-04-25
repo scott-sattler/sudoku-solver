@@ -47,13 +47,16 @@ class SudokuApp:
         self.gui.initialize_board_input_panel()
         self.gui.initialize_control_panel()
         self.gui.initialize_board_selector_menu()
+
+        self.gui.initialize_save_load_menu()
+
         self.bindings()  # call last
 
         self.all_board_references = self.gui.load_all_boards()
 
         self.gui.update_entire_board(self.gui.welcome_message)
 
-        self.gui.initialize_save_load_menu()
+        # self.gui.initialize_save_load_menu()
         # self.gui.show_save_load_menu()
 
 
@@ -102,10 +105,19 @@ class SudokuApp:
         """                 ^ container              ^ notes                """
         all_children = s_b_m_c_children + c_p_c_children + b_i_p_c_children
 
+        """ add hover to save/load buttons """
+        slot_1_buttons = list(self.gui.data_slot_1_buttons.values())
+        slot_1_buttons.pop()  # remove data: int
+        slot_2_buttons = list(self.gui.data_slot_2_buttons.values())
+        slot_2_buttons.pop()
+        slot_3_buttons = list(self.gui.data_slot_3_buttons.values())
+        slot_3_buttons.pop()
+        slot_buttons = slot_1_buttons + slot_2_buttons + slot_3_buttons
+        all_children += slot_buttons
+
         for button in all_children:
             button.bind("<Enter>", enter_button_shade)
             button.bind("<Leave>", leave_button_unshade)
-
 
         def debug_debug_info():
             print(f"{'cell_selection_queue ':.<30} {self.cell_selection_queue}")
@@ -245,70 +257,93 @@ class SudokuApp:
                     self.gui.play_board.itemconfigure(
                         cell_id, fill=self.gui.SELECT_HIGHLIGHT_COLOR)
 
+    # todo: move
+    def post_save_load_operations(self):
+        self.state.board_loaded()
+        self.reset_ui_state()
+        self.gui.hide_save_load_menu()
+
     # todo: this design was probably a bad idea... :(
     def event_handler(self, e):
         """ states constrain an event driven process """
-        state = self.state
-        gui = self.gui
 
         # welcome state                                                  # noqa
-        if state.get_current() == state.WELCOME:
+        if self.state.get_current() == self.state.WELCOME:
             # only allow board selection at welcome
-            if e.widget == gui.select_button:
-                gui.show_board_selector_menu()
-                state.board_selector_enable()
+            if e.widget == self.gui.select_button:
+                self.gui.show_board_selector_menu()
+                self.state.board_selector_enable()
         # board selection state
-        elif state.get_current() == state.BOARD_SELECTION:
-            # allow board selector menu to be toggled
-            if e.widget == gui.select_button:
-                gui.hide_board_selector()
-                state.board_selector_disable()
+        elif self.state.get_current() == self.state.BOARD_SELECTION:
+            # allow board selector and save/load menu to be toggled
+            if e.widget == self.gui.select_button:
+                self.gui.hide_board_selector()
+                self.gui.hide_save_load_menu()
+                self.state.board_selector_disable()
             # execute board selection
             elif e.widget in self.all_board_references:
                 selected_board = self.select_board(e)
-                gui.update_entire_board(selected_board)
-                gui.lock_and_shade_cells(selected_board)
-                state.board_loaded()
+                self.gui.update_entire_board(selected_board)
+                self.gui.lock_and_shade_cells(selected_board)
+                self.state.board_loaded()
                 self.reset_ui_state()
-            # save button
-            elif e.widget == gui.save_button:
-                self.save_state_data()
-                self.reset_ui_state()
-            # load button
-            elif e.widget == gui.load_button:
-                self.load_state_data()
-                state.board_loaded()
-                self.reset_ui_state()
-            # data slot 1
-            elif e.widget in gui.data_slot_1_buttons.values():
-                if e.widget == gui.data_slot_1_buttons['save']:
-                    self.save_state_data()
-                if e.widget == gui.data_slot_1_buttons['load']:
-                    self.load_state_data()
-            # data slot 2
-            elif e.widget in gui.data_slot_2_buttons.values():
-                ...
-            # data slot 3
-            elif e.widget in gui.data_slot_3_buttons.values():
-                ...
 
+            # todo: deprecated
+            # # save button
+            # elif e.widget == self.gui.save_button:
+            #     self.save_state_data()
+            #     self.reset_ui_state()
+            # # load button
+            # elif e.widget == self.gui.load_button:
+            #     self.load_state_data()
+            #     self.state.board_loaded()
+            #     self.reset_ui_state()
+            # data slot 1
+
+            # launch save/load submenu
+            elif e.widget == self.gui.launch_save_load_menu_button:
+                self.gui.hide_board_selector()
+                self.gui.show_save_load_menu()
+            elif e.widget in self.gui.data_slot_1_buttons.values():
+                if e.widget == self.gui.data_slot_1_buttons['save']:
+                    self.save_state_data(self.gui.data_slot_1_buttons['slot'])
+                    self.post_save_load_operations()
+                if e.widget == self.gui.data_slot_1_buttons['load']:
+                    self.load_state_data(save_slot=self.gui.data_slot_1_buttons['slot'])
+                    self.post_save_load_operations()
+            # data slot 2
+            elif e.widget in self.gui.data_slot_2_buttons.values():
+                if e.widget == self.gui.data_slot_2_buttons['save']:
+                    self.save_state_data(self.gui.data_slot_2_buttons['slot'])
+                    self.post_save_load_operations()
+                if e.widget == self.gui.data_slot_2_buttons['load']:
+                    self.load_state_data(save_slot=self.gui.data_slot_2_buttons['slot'])
+                    self.post_save_load_operations()
+            # data slot 3
+            elif e.widget in self.gui.data_slot_3_buttons.values():
+                if e.widget == self.gui.data_slot_3_buttons['save']:
+                    self.save_state_data(self.gui.data_slot_3_buttons['slot'])
+                    self.post_save_load_operations()
+                if e.widget == self.gui.data_slot_3_buttons['load']:
+                    self.load_state_data(save_slot=self.gui.data_slot_3_buttons['slot'])
+                    self.post_save_load_operations()
         # board loaded state
-        elif state.get_current() == state.BOARD_LOADED:
+        elif self.state.get_current() == self.state.BOARD_LOADED:
             # solve button
-            if e.widget == gui.solve_button:
-                state.solving_board_begin()
+            if e.widget == self.gui.solve_button:
+                self.state.solving_board_begin()
                 self.execute_solve_state()
-                state.solving_board_complete()
+                self.state.solving_board_complete()
                 self.verify_board()
-                state.update_current(state.VALIDATED)
+                self.state.update_current(self.state.VALIDATED)
             # verify button
-            elif e.widget == gui.verify_button:
-                state.validate_board()
+            elif e.widget == self.gui.verify_button:
+                self.state.validate_board()
                 self.verify_board()
             # select button
-            elif e.widget == gui.select_button:
-                gui.show_board_selector_menu()
-                state.board_selector_enable()
+            elif e.widget == self.gui.select_button:
+                self.gui.show_board_selector_menu()
+                self.state.board_selector_enable()
             # board selection and input
             elif e.widget in [self.gui.play_board, self.gui.num_selector_popup]:
                 self.board_input_entry(e)
@@ -318,17 +353,17 @@ class SudokuApp:
             # notes input
             elif e.widget in self.gui.note_buttons:
                 self.board_input_notes(e)
-        elif state.get_current() == state.SOLVING_BOARD:
+        elif self.state.get_current() == self.state.SOLVING_BOARD:
             # solve button (transformed into "abort" button)
-            if e.widget == gui.solve_button:
-                state.revert_state()
+            if e.widget == self.gui.solve_button:
+                self.state.revert_state()
         # board validated/invalidated
-        elif state.get_current() == state.VALIDATED:
+        elif self.state.get_current() == self.state.VALIDATED:
             # clears, on any input, valid/invalid results
-            if e.widget != gui.verify_button:
+            if e.widget != self.gui.verify_button:
                 if self.gui.title_label.cget('text') != self.gui.title_text:
                     self.gui.title_label.config(text=self.gui.title_text, bg='#ffffff')
-                    state.board_loaded()
+                    self.state.board_loaded()
 
 
     def select_board(self, e):
@@ -479,8 +514,10 @@ class SudokuApp:
         self.gui.solve_button['state'] = tk.NORMAL
         self.gui.verify_button['state'] = tk.NORMAL
 
-        self.gui.select_board_menu_container.place_forget()
-        self.gui.board_input_panel_container.place_forget()
+        self.gui.hide_board_selector()
+        self.gui.hide_save_load_menu()
+        # self.gui.board_input_panel_container.place_forget()
+        # self.gui.hide
 
         selected_cells = self.cell_selection_queue.keys()
         self.gui.reset_colors_of_selected_cells(selected_cells)
@@ -488,7 +525,13 @@ class SudokuApp:
         self.cell_selection_queue = dict()
         self.gui.reset_colors_of_all_cells()
 
-    def save_state_data(self):
+    def reset_board(self):
+        empty_3d_board = [[[0 for _ in range(10)] for _ in range(9)] for _ in range(9)]
+        locked_state = [[0 for _ in range(9)] for _ in range(9)]
+        self.gui.update_entire_board(empty_3d_board)
+        self.gui.lock_and_shade_cells(locked_state)
+
+    def save_state_data(self, slot_number):
         """
         converts representation of CellData to 3d matrix
         passes 3d matrix to IO for processing
@@ -513,19 +556,42 @@ class SudokuApp:
                 notes.append(int(lock))
                 row.append(notes)
             board_data_with_notes.append(row)
-        self.io.write_3d_board_to_save_file(board_data_with_notes)
+        # self.io.write_3d_board_to_save_file(board_data_with_notes, slot_number)
+        self.io.update_save_file(board_data_with_notes, slot_number)
 
-    def load_state_data(self, save_slot=-1):
-        board = [[[0 for _ in range(10)] for _ in range(9)] for _ in range(9)]
-        locked_state = [[0 for _ in range(9)] for _ in range(9)]
-        self.gui.update_entire_board(board)
-        self.gui.lock_and_shade_cells(board)
-        all_data_lines = self.io.read_all_saved_3d_boards_from_save_file()
-        selected_board = all_data_lines[save_slot]
+    def load_state_data(self, save_slot):
+        """ zero-indexed save_slot
+
+            retrieves all boards from the save file
+            selects the correct board
+            converts the board to the 3d representation,
+            and loads the board
+        """
+        self.reset_board()  # clear current board; necessary unless save notes refactor
+        grouped_data_lines = self.io.read_all_saved_3d_boards_from_save_file()
+
+        selected_board = grouped_data_lines[save_slot]
         board_data = self.io.convert_str_lines_to_3d_saved_board_state(selected_board)
-        if board_data:
+        board = board_data[0]
+        locked_state = board_data[1]
+
+        self.gui.lock_and_shade_cells(locked_state)
+        self.gui.load_board_with_notes(board)
+
+    # todo: deprecated
+    def old_load_state_data(self, save_slot=-1):
+        self.reset_board()  # clear current board; necessary unless save notes refactor
+        grouped_data_lines = self.io.old_read_all_saved_3d_boards_from_save_file()
+
+        if not grouped_data_lines or save_slot > len(grouped_data_lines) - 1:
+            board = [[[0 for _ in range(10)] for _ in range(9)] for _ in range(9)]
+            locked_state = [[0 for _ in range(9)] for _ in range(9)]
+        else:
+            selected_board = grouped_data_lines[save_slot]
+            board_data = self.io.convert_str_lines_to_3d_saved_board_state(selected_board)
             board = board_data[0]
             locked_state = board_data[1]
+
         self.gui.lock_and_shade_cells(locked_state)
         self.gui.load_board_with_notes(board)
 

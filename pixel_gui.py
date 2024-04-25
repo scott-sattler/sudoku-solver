@@ -63,12 +63,17 @@ class PixelGUI(tk.Tk):
         self.number_buttons = None
         self.note_buttons = None
 
-        self.data_slot_1_buttons: dict[str, tk.Label] = {
-            'save': ..., 'load': ..., 'preview': ..., 'data': 1}
-        self.data_slot_2_buttons: dict[str, tk.Label] = {
-            'save': ..., 'load': ..., 'preview': ..., 'data': 2}
-        self.data_slot_3_buttons: dict[str, tk.Label] = {
-            'save': ..., 'load': ..., 'preview': ..., 'data': 3}
+        # todo: deprecated
+        # self.save_button = None
+        # self.load_button = None
+
+        # note: zero-indexed, while UI is one-indexed
+        self.data_slot_1_buttons: dict[str, int | tk.Label] = {
+            'save': ..., 'load': ..., 'preview': ..., 'slot': 0}
+        self.data_slot_2_buttons: dict[str, int | tk.Label] = {
+            'save': ..., 'load': ..., 'preview': ..., 'slot': 1}
+        self.data_slot_3_buttons: dict[str, int | tk.Label] = {
+            'save': ..., 'load': ..., 'preview': ..., 'slot': 2}
         self.save_load_panel_container = None
 
         self.cell_colors = False
@@ -77,6 +82,7 @@ class PixelGUI(tk.Tk):
         self.medium_clue_size = medium_clue_size
 
         self.select_board_menu_container = None
+        self.launch_save_load_menu_button = None
         self.empty_board_button = None
         self.easy_board_button = None
         self.hard_board_button = None
@@ -243,49 +249,6 @@ class PixelGUI(tk.Tk):
 
                 self.board_index_lookup[txt_id] = (i, j)
                 self.board_index_lookup[cell_id] = (i, j)
-
-    # todo: deprecated
-    def initialize_num_selector_popup(self):
-        cell_size = self.CELL_SIZE
-        width = cell_size * 3
-        height = cell_size * 3
-        border_width = 3
-        rect_b_width = 2
-
-        self.num_selector_popup = tk.Canvas(self.play_board)
-        self.num_selector_popup.config(
-            width=width,
-            height=height,
-            bg=self.DEFAULT_COLOR,
-            borderwidth=border_width,
-            highlightthickness=0)
-        self.num_selector_popup.place(relx=0, rely=0)
-        self.num_selector_popup["state"] = tk.DISABLED
-        self.num_selector_popup.place_forget()
-
-        for i in range(3):
-            for j in range(3):
-                num = (i * 3) + (j + 1)
-                color = self.fill[num - 1] if self.cell_colors else self.DEFAULT_CELL_COLOR
-
-                cell_id = self.num_selector_popup.create_rectangle(
-                    j * (width / 3) + border_width + rect_b_width,
-                    i * (width / 3) + border_width + rect_b_width,
-                    j * (width / 3) + cell_size + border_width / 3,
-                    i * (width / 3) + cell_size + border_width / 3,
-                    width=rect_b_width, fill=color,
-                    tags=('num', 'backdrop'),
-                )
-                self.num_selector_lookup[cell_id] = num
-
-                text_id = self.num_selector_popup.create_text(
-                    j * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
-                    i * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
-                    font=(self.board_font, self.font_sizes[4]),
-                    text=num,
-                    tags='num',
-                )
-                self.num_selector_lookup[text_id] = num
 
     def initialize_control_panel(self):
         """ these buttons differ from board select menu buttons """
@@ -456,11 +419,17 @@ class PixelGUI(tk.Tk):
         self.random_pick_17_board_button.config(width=max(len(txt_3) + 1, 14), padx=6)
         self.random_pick_17_board_button.grid(row=3, column=0, columnspan=3, padx=2, pady=0)
 
-        self.save_button = formatted_button(sbmb, 'SAVE', f_scale)
-        self.save_button.grid(row=4, column=0, padx=2, pady=8)
+        # todo: dperecated
+        # self.save_button = formatted_button(sbmb, 'SAVE', f_scale)
+        # self.save_button.grid(row=4, column=0, padx=2, pady=8)
+        #
+        # self.load_button = formatted_button(sbmb, 'LOAD', f_scale)
+        # self.load_button.grid(row=4, column=2, padx=2, pady=8)
 
-        self.load_button = formatted_button(sbmb, 'LOAD', f_scale)
-        self.load_button.grid(row=4, column=2, padx=2, pady=8)
+        self.launch_save_load_menu_button = formatted_button(sbmb, 'Save/Load Menu', f_scale)
+        self.launch_save_load_menu_button.config(width=max(len(txt_3) + 1, 14), padx=6)
+        self.launch_save_load_menu_button.grid(row=4, column=0, columnspan=3, padx=2, pady=(12, 3))
+
 
     def initialize_save_load_menu(self):
         def formatted_button(master, text, font_i):
@@ -487,7 +456,7 @@ class PixelGUI(tk.Tk):
             highlightbackground='black')
         # place cannot be used here; settings are forgotten
 
-        # exclusively for button alignment  # todo: local?
+        # exclusively for button alignment
         save_load_panel_backdrop = tk.Frame(self.save_load_panel_container)
         save_load_panel_backdrop.place(relx=.5, rely=.5, anchor=tk.CENTER)
 
@@ -516,19 +485,19 @@ class PixelGUI(tk.Tk):
         self.data_slot_3_buttons['save'] = data_slot_3_save_button
         self.data_slot_3_buttons['load'] = data_slot_3_load_button
 
-        pady = 6
+        pad_y = 6
 
-        data_slot_1_button.grid(row=0, column=0, padx=2, pady=pady)
-        data_slot_2_button.grid(row=1, column=0, padx=2, pady=pady)
-        data_slot_3_button.grid(row=2, column=0, padx=2, pady=pady)
+        data_slot_1_button.grid(row=0, column=0, padx=2, pady=pad_y)
+        data_slot_2_button.grid(row=1, column=0, padx=2, pady=pad_y)
+        data_slot_3_button.grid(row=2, column=0, padx=2, pady=pad_y)
 
-        data_slot_1_save_button.grid(row=0, column=1, padx=2, pady=pady)
-        data_slot_2_save_button.grid(row=1, column=1, padx=2, pady=pady)
-        data_slot_3_save_button.grid(row=2, column=1, padx=2, pady=pady)
+        data_slot_1_save_button.grid(row=0, column=1, padx=2, pady=pad_y)
+        data_slot_2_save_button.grid(row=1, column=1, padx=2, pady=pad_y)
+        data_slot_3_save_button.grid(row=2, column=1, padx=2, pady=pad_y)
 
-        data_slot_1_load_button.grid(row=0, column=2, padx=2, pady=pady)
-        data_slot_2_load_button.grid(row=1, column=2, padx=2, pady=pady)
-        data_slot_3_load_button.grid(row=2, column=2, padx=2, pady=pady)
+        data_slot_1_load_button.grid(row=0, column=2, padx=2, pady=pad_y)
+        data_slot_2_load_button.grid(row=1, column=2, padx=2, pady=pad_y)
+        data_slot_3_load_button.grid(row=2, column=2, padx=2, pady=pad_y)
 
         # self.save_load_panel_container.place(relx=.5, rely=.5, anchor=tk.CENTER)
 
@@ -544,6 +513,9 @@ class PixelGUI(tk.Tk):
 
     def hide_board_selector(self):
         self.select_board_menu_container.place_forget()
+
+    def hide_save_load_menu(self):
+        self.save_load_panel_container.place_forget()
 
     def lock_and_shade_cells(self, board_to_shade):
         """ locks and colors cells dark """
@@ -694,6 +666,49 @@ class PixelGUI(tk.Tk):
 
     ###########################################################################
     # deprecated and debugging tools below
+
+    # todo: deprecated
+    def initialize_num_selector_popup(self):
+        cell_size = self.CELL_SIZE
+        width = cell_size * 3
+        height = cell_size * 3
+        border_width = 3
+        rect_b_width = 2
+
+        self.num_selector_popup = tk.Canvas(self.play_board)
+        self.num_selector_popup.config(
+            width=width,
+            height=height,
+            bg=self.DEFAULT_COLOR,
+            borderwidth=border_width,
+            highlightthickness=0)
+        self.num_selector_popup.place(relx=0, rely=0)
+        self.num_selector_popup["state"] = tk.DISABLED
+        self.num_selector_popup.place_forget()
+
+        for i in range(3):
+            for j in range(3):
+                num = (i * 3) + (j + 1)
+                color = self.fill[num - 1] if self.cell_colors else self.DEFAULT_CELL_COLOR
+
+                cell_id = self.num_selector_popup.create_rectangle(
+                    j * (width / 3) + border_width + rect_b_width,
+                    i * (width / 3) + border_width + rect_b_width,
+                    j * (width / 3) + cell_size + border_width / 3,
+                    i * (width / 3) + cell_size + border_width / 3,
+                    width=rect_b_width, fill=color,
+                    tags=('num', 'backdrop'),
+                )
+                self.num_selector_lookup[cell_id] = num
+
+                text_id = self.num_selector_popup.create_text(
+                    j * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
+                    i * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
+                    font=(self.board_font, self.font_sizes[4]),
+                    text=num,
+                    tags='num',
+                )
+                self.num_selector_lookup[text_id] = num
 
     # todo: deprecated
     def spawn_num_selector(self, i, j):
