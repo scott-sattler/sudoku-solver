@@ -47,17 +47,12 @@ class SudokuApp:
         self.gui.initialize_board_input_panel()
         self.gui.initialize_control_panel()
         self.gui.initialize_board_selector_menu()
-
         self.gui.initialize_save_load_menu()
-
         self.bindings()  # call last
 
         self.all_board_references = self.gui.load_all_boards()
 
         self.gui.update_entire_board(self.gui.welcome_message)
-
-        # self.gui.initialize_save_load_menu()
-        # self.gui.show_save_load_menu()
 
 
     def bindings(self):
@@ -287,18 +282,6 @@ class SudokuApp:
                 self.gui.lock_and_shade_cells(selected_board)
                 self.state.board_loaded()
                 self.reset_ui_state()
-
-            # todo: deprecated
-            # # save button
-            # elif e.widget == self.gui.save_button:
-            #     self.save_state_data()
-            #     self.reset_ui_state()
-            # # load button
-            # elif e.widget == self.gui.load_button:
-            #     self.load_state_data()
-            #     self.state.board_loaded()
-            #     self.reset_ui_state()
-            # data slot 1
 
             # launch save/load submenu
             elif e.widget == self.gui.launch_save_load_menu_button:
@@ -574,23 +557,6 @@ class SudokuApp:
         board_data = self.io.convert_str_lines_to_3d_saved_board_state(selected_board)
         board = board_data[0]
         locked_state = board_data[1]
-
-        self.gui.lock_and_shade_cells(locked_state)
-        self.gui.load_board_with_notes(board)
-
-    # todo: deprecated
-    def old_load_state_data(self, save_slot=-1):
-        self.reset_board()  # clear current board; necessary unless save notes refactor
-        grouped_data_lines = self.io.old_read_all_saved_3d_boards_from_save_file()
-
-        if not grouped_data_lines or save_slot > len(grouped_data_lines) - 1:
-            board = [[[0 for _ in range(10)] for _ in range(9)] for _ in range(9)]
-            locked_state = [[0 for _ in range(9)] for _ in range(9)]
-        else:
-            selected_board = grouped_data_lines[save_slot]
-            board_data = self.io.convert_str_lines_to_3d_saved_board_state(selected_board)
-            board = board_data[0]
-            locked_state = board_data[1]
 
         self.gui.lock_and_shade_cells(locked_state)
         self.gui.load_board_with_notes(board)

@@ -169,38 +169,6 @@ class FileIO:
             return False
         return all_boards
 
-    # todo: deprecated
-    def old_read_all_saved_3d_boards_from_save_file(self):
-        """ reads str format and returns converted 3d note format """
-        b_d_s_v = self.BOARD_DATA_SENTINEL_VALUE
-        all_boards: list[list[str]] = list()
-        try:
-            with open(self.save_path, 'r') as f:
-                lines = f.readlines()
-                board_data = list()
-                next_board = False
-                for line in lines:
-                    stripped_suffix = line.rstrip("\n\r")
-                    if stripped_suffix == '':
-                        continue
-                    elif b_d_s_v in stripped_suffix:
-                        next_board = True
-                    elif next_board:
-                        board_data.append(stripped_suffix)
-
-                    if len(board_data) > 10:
-                        all_boards.append(board_data)
-                        board_data = list()
-                        next_board = False
-
-            if len(all_boards) < 1:
-                return False
-            logging.info('save read successful')
-        except (IOError,) as e:
-            logging.exception('save read failure', stack_info=True)
-            return False
-        return all_boards
-
     @staticmethod
     def convert_3d_board_to_str(board: list[list[list[int]]]) -> str:
         """

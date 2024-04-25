@@ -63,10 +63,6 @@ class PixelGUI(tk.Tk):
         self.number_buttons = None
         self.note_buttons = None
 
-        # todo: deprecated
-        # self.save_button = None
-        # self.load_button = None
-
         # note: zero-indexed, while UI is one-indexed
         self.data_slot_1_buttons: dict[str, int | tk.Label] = {
             'save': ..., 'load': ..., 'preview': ..., 'slot': 0}
@@ -401,9 +397,6 @@ class PixelGUI(tk.Tk):
         self.hard_board_button = formatted_button(sbmb, "Hard", f_scale)
         self.hard_board_button.grid(row=0, column=2, padx=2, pady=3)
 
-        # self.random_board_button = formatted_button(sbmb, "Random", size)
-        # self.random_board_button.grid(row=2, column=0)
-
         txt_1 = f"Gen. Rand. {self.easy_clue_size} Clue"
         self.random_easy_board_button = formatted_button(sbmb, txt_1, f_scale)
         self.random_easy_board_button.config(width=max(len(txt_1) + 1, 14), padx=6)
@@ -418,13 +411,6 @@ class PixelGUI(tk.Tk):
         self.random_pick_17_board_button = formatted_button(sbmb, txt_3, f_scale)
         self.random_pick_17_board_button.config(width=max(len(txt_3) + 1, 14), padx=6)
         self.random_pick_17_board_button.grid(row=3, column=0, columnspan=3, padx=2, pady=0)
-
-        # todo: dperecated
-        # self.save_button = formatted_button(sbmb, 'SAVE', f_scale)
-        # self.save_button.grid(row=4, column=0, padx=2, pady=8)
-        #
-        # self.load_button = formatted_button(sbmb, 'LOAD', f_scale)
-        # self.load_button.grid(row=4, column=2, padx=2, pady=8)
 
         self.launch_save_load_menu_button = formatted_button(sbmb, 'Save/Load Menu', f_scale)
         self.launch_save_load_menu_button.config(width=max(len(txt_3) + 1, 14), padx=6)
@@ -499,8 +485,6 @@ class PixelGUI(tk.Tk):
         data_slot_2_load_button.grid(row=1, column=2, padx=2, pady=pad_y)
         data_slot_3_load_button.grid(row=2, column=2, padx=2, pady=pad_y)
 
-        # self.save_load_panel_container.place(relx=.5, rely=.5, anchor=tk.CENTER)
-
     def show_board_selector_menu(self):
         p_rows = 5  # todo
         self.select_board_menu_container.place(
@@ -537,7 +521,8 @@ class PixelGUI(tk.Tk):
                 # self.play_board.lower(cell_id)  # todo: review
 
     def limited_update(self, changed_cells) -> None:
-        """ changed_cells parameter of type [(i, j, value)]
+        """
+            changed_cells parameter of type [(i, j, value)]
             note: does NOT hide notes
         """
         if not changed_cells:
@@ -583,7 +568,6 @@ class PixelGUI(tk.Tk):
                     if note_val != 0:
                         note_id = self.board_gui_data[i][j].note_ids[note_val]
                         self.play_board.itemconfigure(note_id, state=tk.NORMAL)
-
 
     def shade_as_selected_cells(self, selected_cells):
         highlight = self.SELECT_HIGHLIGHT_COLOR
