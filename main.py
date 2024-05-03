@@ -252,15 +252,14 @@ class SudokuApp:
                     self.gui.play_board.itemconfigure(
                         cell_id, fill=self.gui.SELECT_HIGHLIGHT_COLOR)
 
-    # todo: move
-    def post_save_load_operations(self):
-        self.state.board_loaded()
-        self.reset_ui_state()
-        self.gui.hide_save_load_menu()
-
     # todo: this design was probably a bad idea... :(
     def event_handler(self, e):
         """ states constrain an event driven process """
+
+        def post_save_load_operations():
+            self.state.board_loaded()
+            self.reset_ui_state()
+            self.gui.hide_save_load_menu()
 
         # welcome state                                                  # noqa
         if self.state.get_current() == self.state.WELCOME:
@@ -282,7 +281,6 @@ class SudokuApp:
                 self.gui.lock_and_shade_cells(selected_board)
                 self.state.board_loaded()
                 self.reset_ui_state()
-
             # launch save/load submenu
             elif e.widget == self.gui.launch_save_load_menu_button:
                 self.gui.hide_board_selector()
@@ -290,26 +288,26 @@ class SudokuApp:
             elif e.widget in self.gui.data_slot_1_buttons.values():
                 if e.widget == self.gui.data_slot_1_buttons['save']:
                     self.save_state_data(self.gui.data_slot_1_buttons['slot'])
-                    self.post_save_load_operations()
+                    post_save_load_operations()
                 if e.widget == self.gui.data_slot_1_buttons['load']:
                     self.load_state_data(save_slot=self.gui.data_slot_1_buttons['slot'])
-                    self.post_save_load_operations()
+                    post_save_load_operations()
             # data slot 2
             elif e.widget in self.gui.data_slot_2_buttons.values():
                 if e.widget == self.gui.data_slot_2_buttons['save']:
                     self.save_state_data(self.gui.data_slot_2_buttons['slot'])
-                    self.post_save_load_operations()
+                    post_save_load_operations()
                 if e.widget == self.gui.data_slot_2_buttons['load']:
                     self.load_state_data(save_slot=self.gui.data_slot_2_buttons['slot'])
-                    self.post_save_load_operations()
+                    post_save_load_operations()
             # data slot 3
             elif e.widget in self.gui.data_slot_3_buttons.values():
                 if e.widget == self.gui.data_slot_3_buttons['save']:
                     self.save_state_data(self.gui.data_slot_3_buttons['slot'])
-                    self.post_save_load_operations()
+                    post_save_load_operations()
                 if e.widget == self.gui.data_slot_3_buttons['load']:
                     self.load_state_data(save_slot=self.gui.data_slot_3_buttons['slot'])
-                    self.post_save_load_operations()
+                    post_save_load_operations()
         # board loaded state
         elif self.state.get_current() == self.state.BOARD_LOADED:
             # solve button
