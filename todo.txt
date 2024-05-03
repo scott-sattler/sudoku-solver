@@ -10,6 +10,8 @@ todo bugs:
     save file has an additional newline at the end
 
 todo:
+    fisher-yates 17 clue database; store index in save file, rather than selection set
+    ...
     consider board preview
     ...
     overwrite conformation on occupied data slots
