@@ -14,6 +14,6 @@ The application currently contains most of the functionality you would find in a
 
 <div align="center">
     <img width="25%" src="https://github.com/scott-sattler/sudoku-solver/blob/58a964767b7cfa62e57f8bbf8a735fd21e658af4/screenshots/readme_image_1.png">
-    <img width="25%" src="https://github.com/scott-sattler/sudoku-solver/blob/58a964767b7cfa62e57f8bbf8a735fd21e658af4/screenshots/readme_image_2.png">
+    <img width="25%" src="https://github.com/scott-sattler/sudoku-solver/blob/bad2818cfa2013f85590909518c9cade73421963/screenshots/readme_image_2.png">
     <img width="25%" src="https://github.com/scott-sattler/sudoku-solver/blob/58a964767b7cfa62e57f8bbf8a735fd21e658af4/screenshots/readme_image_3.png">
 </div>
