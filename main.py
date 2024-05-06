@@ -363,7 +363,7 @@ class SudokuApp:
             if self.logs: logging.info(f'{self.medium_clue_size} clue generated:\n\t{str_b}')
         elif e.widget == self.gui.random_pick_17_board_button:
             # board = matrix_library.steering_wheel_classic
-            board = self.io.read_and_load_2d_board_from_17_hints_data_file()
+            board = self.io.load_2d_board_from_17_clue_data_file()
 
         return board
 

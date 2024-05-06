@@ -8,11 +8,12 @@ class FileIO:
     DATA_FILE_NAME = '17puz49158.txt'
     SAVE_FILE_NAME = 'sudoku_save_data'
     BOARD_DATA_SENTINEL_VALUE = 'board_data_'  # eg board_data_slot_*
-    CLUE_17_SENTINEL_VALUE = '_17_clue_set: '
+    CLUE_17_SENTINEL_NAME = '_17_clue_index:'
+    CLUE_17_SENTINEL_VALUE = '49157'  # 49158 - 1
 
     """    
     save file data format:
-        _17_hint_set: bare_set_values
+        _17_clue_index: inclusive upper bound of implicit data structure
         newline
         board_data_slot_1
         board data (empty board data if none)
@@ -35,7 +36,7 @@ class FileIO:
 
         """ Pyinstaller unpacks .exe into TEMP directory _MEIPASS """
         rel_path = os.path.join(os.path.dirname(__file__), self.DATA_FILE_NAME)
-        self.data_path_17_hints = os.path.abspath(rel_path)
+        self.data_path_17_clue = os.path.abspath(rel_path)
 
         # logger = logging.getLogger(__name__)
         logging.getLogger()
@@ -44,9 +45,11 @@ class FileIO:
 
     def create_file(self):
         """ to simplify other operations, a valid file format is initialized """
+        c_17_name = self.CLUE_17_SENTINEL_NAME
+        c_17_value = self.CLUE_17_SENTINEL_VALUE
         try:
             f = open(self.save_path, 'x')
-            f.write(self.CLUE_17_SENTINEL_VALUE + '\n\n')
+            f.write(f'{c_17_name} {c_17_value}\n\n')
             for i in range(1, 4):
                 f.write(self._empty_save_slot_string(i))
             f.close()
@@ -71,21 +74,56 @@ class FileIO:
         """
         return f'{self.BOARD_DATA_SENTINEL_VALUE}slot_{slot_number + 1}:\n'
 
-    def read_and_load_2d_board_from_17_hints_data_file(self):
-        """ returns a random board from 17 clue data file """
-        board_save_data = str()
-        random_int = r.randint(0, 49158 - 1)
+    ###########################################################################
+    # 17 clue fns
+
+    def read_17_clue_upper_bound(self):
+        """ inclusive upper boundary """
         try:
-            with open(self.data_path_17_hints, 'r') as f:
-                for i, line in enumerate(f):
-                    if i == random_int:
-                        board_save_data = line.rstrip("\n\r")
-                        break
-            logging.info(f'17 clue data read successful:\n\t{board_save_data}')
+            with open(self.save_path, 'r') as f:
+                line = f.readline()
+                index = line.split()[-1]
+            logging.info(f'17 clue index read successful:\n\t{index}')
         except (IOError,) as e:
-            logging.exception('save read failure', stack_info=True)
+            logging.exception('17 clue index read failure', stack_info=True)
             return False
-        return self.convert_str_lines_to_2d_board(board_save_data)
+        return int(index)
+
+    def write_17_clue_upper_bound(self, new_index):
+        if new_index == -1:
+            new_index = 49157
+        try:
+            with open(self.save_path, 'r+') as f:
+                f.seek(len(self.CLUE_17_SENTINEL_NAME) + 1)
+                f.write(f'{new_index:05}')
+            logging.info(f'17 clue index write successful:\n\t{new_index}')
+        except (IOError,) as e:
+            logging.exception('17 clue index write failure', stack_info=True)
+            return False
+        return True
+
+    def load_2d_board_from_17_clue_data_file(self):
+        """
+            returns a random board from 17 clue data file
+            implements ~ fisher-yates
+            note: not easily done in place, if possible
+        """
+        random_board = str()
+        upper_index_inclusive = self.read_17_clue_upper_bound()
+        random_int = r.randint(0, upper_index_inclusive)
+        try:
+            with open(self.data_path_17_clue, 'r') as f:
+                lines = f.readlines()
+            lines[random_int], lines[upper_index_inclusive] = lines[upper_index_inclusive], lines[random_int]
+            with open(self.data_path_17_clue, 'w') as f:
+                f.writelines(lines)
+            logging.info(f'17 clue data read/write successful:\n\t{random_board}')
+        except (IOError,) as e:
+            logging.exception('17 clue data read/write failure', stack_info=True)
+            return False
+        random_board = lines[upper_index_inclusive].rstrip("\n\r")
+        self.write_17_clue_upper_bound(upper_index_inclusive - 1)
+        return self.convert_str_lines_to_2d_board(random_board)
 
     @staticmethod
     # todo: merge with saved board loader, or into parent function
@@ -105,6 +143,46 @@ class FileIO:
                 row = list()
                 j = 0
         return reconstructed
+
+
+    def _reset_17_clue_data_file(self):
+        c_17_name = self.CLUE_17_SENTINEL_NAME
+        c_17_value = self.CLUE_17_SENTINEL_VALUE
+        try:
+            with open(self.data_path_17_clue, 'r') as f:
+                data_17_clue = f.readlines()
+            data_17_clue.sort()
+            with open(self.data_path_17_clue, 'w') as f:
+                f.writelines(data_17_clue)
+
+            with open(self.save_path, 'r') as f:
+                data_save = f.readlines()
+            data_save[0] = f'{c_17_name} {c_17_value}\n'
+            with open(self.save_path, 'w') as f:
+                f.writelines(data_save)
+
+            logging.info(f'17 clue reset successful:\n\t{self.save_path}')
+        except (IOError,):
+            logging.warning(f'17 clue reset failure:\n\t{self.save_path}')
+
+    def _validate_17_clue_data_file(self):
+        with open(self.data_path_17_clue, 'r') as f:
+            data_lines = f.readlines()
+        data_lines.sort()
+        path = self.data_path_17_clue[:-3] + 'bak'
+        with open(path, 'r') as f:
+            reference_lines = f.readlines()
+
+        if len(data_lines) != len(reference_lines):
+            return False
+
+        if data_lines != reference_lines:
+            for i in range(len(data_lines)):
+                if data_lines[i] != reference_lines[i]:
+                    print(f'line {i}\n', data_lines[i], reference_lines[i])
+            return False
+        else:
+            return True
 
     ###########################################################################
     # save/load fns
@@ -308,3 +386,15 @@ if __name__ == '__main__':
         [0, 0, 6, 0, 0, 7, 0, 0, 8],
     ]
     io = FileIO()
+    # test_i = io.read_17_clue_upper_bound()
+    # print(test_i)
+    # test_board = io.read_and_load_2d_board_from_17_clue_data_file()
+    # print(test_board)
+
+    # for i in range(10):
+    #     test_board = io.load_2d_board_from_17_clue_data_file()
+
+    io._reset_17_clue_data_file()
+    print(io._validate_17_clue_data_file())
+
+
