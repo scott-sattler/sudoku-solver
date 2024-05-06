@@ -10,6 +10,8 @@ Although I do not actually play much Sudoku, I thoroughly enjoy building things!
 
 I have not yet employed DLX (Algorithm X; or dancing links), so the performance suffers accordingly. :(
 
+Random 17 clue board selection was implemented using Fisher-Yates.
+
 The application currently contains most of the functionality you would find in a typical Sudoku application, despite the title remaining unchanged.
 
 <div align="center">
