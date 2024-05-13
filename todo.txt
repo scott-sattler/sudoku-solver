@@ -1,4 +1,6 @@
 todo bugs:
+    title reconfigured for Arial; fixedsys requires title reconfig
+    ...
     hold and drag Tkinter bug; have to code workaround or ignore
     ...
     refactor solve/verify button states (enable/disable color)

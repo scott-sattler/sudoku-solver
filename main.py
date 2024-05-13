@@ -473,16 +473,12 @@ class SudokuApp:
         se = SolverEngine()
 
         if se.validate_board(self.convert_board()):
-            self.gui.title_label.config(
-                text='VALIDATED!',
-                width=len(self.gui.title_text))
-            # self.gui.verify_button['state'] = tk.DISABLED
+            self.gui.title_label.config(text='VALIDATED!')
             self.gui.title_label.config(bg='#53ec53')
+            # self.gui.verify_button['state'] = tk.DISABLED
             # self.gui.solve_button['state'] = tk.DISABLED
         else:
-            self.gui.title_label.config(
-                text='invalid :(',
-                width=len(self.gui.title_text))
+            self.gui.title_label.config(text='invalid :(')
             self.gui.title_label.config(bg='#ec5353')
         # self.gui.verify_button['state'] = tk.DISABLED
 

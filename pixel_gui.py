@@ -16,6 +16,8 @@ with open(ICON_PATH, 'wb') as icon_file:
 class PixelGUI(tk.Tk):
     BOARD_CELLS = 9
     CELL_SIZE = 50
+    # BOARD_FONT = "fixedsys"
+    BOARD_FONT = "Arial"
     DEFAULT_COLOR = '#ffffff'
     DEFAULT_TKINTER_COLOR = '#f0f0f0'
     BUTTON_COLOR = DEFAULT_COLOR
@@ -29,7 +31,7 @@ class PixelGUI(tk.Tk):
         tk.Tk.__init__(self, *args, **kwargs)
         self.container = tk.Frame(self)
         self.container.config(background=self.DEFAULT_COLOR)
-        self.container.pack(side="top", fill="both", expand=True)
+        self.container.pack(side="top", fill="both", expand=False)
 
         self.title('')
         self.iconbitmap(default=ICON_PATH)
@@ -37,7 +39,7 @@ class PixelGUI(tk.Tk):
         self.resizable(width=False, height=False)
         self.config(background="#ffffff")  # white
 
-        self.board_font = "fixedsys"  # 12, 18, 24, 34... sizes... 40 is different font... 45 resumes?
+        # self.board_font = "fixedsys"  # 12, 18, 24, 34... sizes... 40 is different font... 45 resumes?
         # self.font_size = int(12 / 25.000 * self.CELL_SIZE)  # 24 @ CELL_SIZE 50
         self.font_sizes = [0, 12, 13, 18, 24, 34, 40, 45, 51, 63, 65]  # lower bounds, except 12 and 65
 
@@ -134,9 +136,12 @@ class PixelGUI(tk.Tk):
         self.title_label = tk.Label(self.title_container)
         self.title_label.config(
             text=self.title_text,
-            font=(self.board_font, self.font_sizes[7]),
+            # font=(self.BOARD_FONT, self.font_sizes[7]),
+            font=(self.BOARD_FONT, 42),
             bg=self.DEFAULT_COLOR,
-            padx=20)
+            padx=20,
+            width=15,
+        )
         self.title_label.pack()
 
     def initialize_play_board(self):
@@ -214,7 +219,7 @@ class PixelGUI(tk.Tk):
                 txt_id = self.play_board.create_text(
                     cell_size / 2 + (j * cell_size) + 4,
                     cell_size / 2 + (i * cell_size) + 4,
-                    font=(self.board_font, font_size),
+                    font=(self.BOARD_FONT, font_size),
                     text='',
                     tags="cell",
                 )
@@ -227,7 +232,7 @@ class PixelGUI(tk.Tk):
                         note_id = self.play_board.create_text(
                             mid_i - 14 + (q * 14),  # 14 * 3 = 42 => 8px/2 border
                             mid_j - 14 + (p * 14),  # forced int precision
-                            font=(self.board_font, 8),
+                            font=(self.BOARD_FONT, 8),
                             text=f'{(3 * p) + q + 1}',
                             fill=self.NOTE_COLOR,  # '#808080'
                             tags='note',
@@ -253,7 +258,7 @@ class PixelGUI(tk.Tk):
             button_color = self.BUTTON_COLOR
             button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
-            button.config(font=(self.board_font, font_size))
+            button.config(font=(self.BOARD_FONT, font_size))
             button.config(bg=button_color, borderwidth=0)
             button.config(width=8)
             return button
@@ -295,7 +300,7 @@ class PixelGUI(tk.Tk):
             button.config(text=text, anchor=tk.CENTER)
             button.config(bg=button_color, borderwidth=2, relief='solid')
             button.config(width=2, padx=0)
-            button.config(font=(self.board_font, font_size))
+            button.config(font=(self.BOARD_FONT, font_size))
             return button
 
         self.number_panel_container = tk.Canvas(self.board_input_panel_container)
@@ -323,7 +328,7 @@ class PixelGUI(tk.Tk):
             button.config(text=text, anchor=tk.CENTER)
             button.config(bg=button_color, borderwidth=2, relief='solid')
             button.config(width=2, padx=0)
-            button.config(font=(self.board_font, font_size))
+            button.config(font=(self.BOARD_FONT, font_size))
             button.config(fg=note_color)
             return button
 
@@ -366,7 +371,7 @@ class PixelGUI(tk.Tk):
             button_color = self.BUTTON_COLOR
             button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
-            button.config(font=(self.board_font, font_size))
+            button.config(font=(self.BOARD_FONT, font_size))
             button.config(bg=button_color, relief='sunken', borderwidth=0)
             button.config(highlightbackground='black', highlightthickness=2)
             button.config(height=1, width=7)  # width in chars
@@ -426,7 +431,7 @@ class PixelGUI(tk.Tk):
             button_color = self.BUTTON_COLOR
             button = tk.Label(master)
             button.config(text=text, anchor=tk.CENTER)
-            button.config(font=(self.board_font, font_size))
+            button.config(font=(self.BOARD_FONT, font_size))
             button.config(bg=button_color, relief='sunken', borderwidth=0)
             button.config(highlightbackground='black', highlightthickness=2)
             button.config(height=1, width=len(text)+ 2)  # width in chars
@@ -688,7 +693,7 @@ class PixelGUI(tk.Tk):
                 text_id = self.num_selector_popup.create_text(
                     j * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
                     i * (width / 3) + (border_width + rect_b_width + cell_size) / 2,
-                    font=(self.board_font, self.font_sizes[4]),
+                    font=(self.BOARD_FONT, self.font_sizes[4]),
                     text=num,
                     tags='num',
                 )
