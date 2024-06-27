@@ -14,7 +14,7 @@ Random 17 clue board selection was implemented using Fisher-Yates. Given apparen
 
 The application currently contains most of the functionality you would find in a typical Sudoku application, despite the title remaining unchanged.
 
-Note: the default font (line 20 in pixel_gui.py) was changed to Arial to make it less harsh, which should also resolve text compatibility issues across different operating systems. The screenshots have not yet been updated.
+Note: the default font (line 20 in pixel_gui.py) was changed to Arial to make it less harsh, which should also resolve text compatibility issues across different operating systems. The screenshots below have not yet been updated. To revert this change, comment out line 20, and uncomment line 19.
 
 <div align="center">
     <img width="25%" src="https://github.com/scott-sattler/sudoku-solver/blob/58a964767b7cfa62e57f8bbf8a735fd21e658af4/screenshots/readme_image_1.png">
